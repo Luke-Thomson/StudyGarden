@@ -1,4 +1,6 @@
 import router from '@adonisjs/core/services/router'
+import {middleware} from "#start/kernel";
+import SubjectsController from "#controllers/subjects_controller";
 
 // lazy import the controller (default export)
 const UsersController = () => import('#controllers/users_controller')
@@ -19,10 +21,19 @@ router.group(() => {
   router.delete('/users/:id', [UsersController, 'destroy'])
 }).use(middleware.auth({ guards: ['api'] }))
 
+// Subject endpoints
+router
+  .group(() => {
+    router.get('/subjects', [SubjectsController, 'index'])
+    router.post('/subjects', [SubjectsController, 'store'])
+    router.get('/subjects/:id', [SubjectsController, 'show'])
+    router.put('/subjects/:id', [SubjectsController, 'update'])
+    router.delete('/subjects/:id', [SubjectsController, 'destroy'])
+  }).use(middleware.auth({ guards: ['api'] }))
+
 // Swagger
 import AutoSwagger from "adonis-autoswagger";
 import swagger from "#config/swagger";
-import {middleware} from "#start/kernel";
 // returns swagger in YAML
 router.get("/swagger", async () => {
   return AutoSwagger.default.docs(router.toJSON(), swagger);
