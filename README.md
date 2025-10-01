@@ -34,7 +34,7 @@ It’s both a **study tool** and a **casual game** to keep you motivated.
 - **Frontend:** React, TypeScript, TailwindCSS  
 - **Backend:** AdonisJS  
 - **Database:** PostgreSQL 
-- **Other Tools:** Slack (team communication), GitHub (version control)  
+- **Other Tools:** Slack (team communication), GitHub (version control), Vite (building tool)
 
 ---
 
