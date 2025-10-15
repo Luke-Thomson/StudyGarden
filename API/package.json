@@ -60,6 +60,7 @@
     "@adonisjs/core": "^6.18.0",
     "@adonisjs/cors": "^2.2.1",
     "@adonisjs/lucid": "^21.6.1",
+    "@adonisjs/static": "^1.1.1",
     "@solidjs/meta": "^0.29.4",
     "@vinejs/vine": "^3.0.1",
     "adonis-autoswagger": "^3.73.0",
