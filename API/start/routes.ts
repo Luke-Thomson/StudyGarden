@@ -23,7 +23,7 @@ router
 router.post('/register', [AuthController, 'register'])        // register (creates role: 'user')
 
 // -----------------------------
-// Admin-only user management
+// Admin-only management
 // -----------------------------
 router
   .group(() => {
@@ -32,8 +32,11 @@ router
     router.put('/users/:id',   [UsersController, 'update'])
     router.delete('/users/:id',[UsersController, 'destroy'])
 
-    // (optional) view a user's subjects as admin
+    // view a user's subjects as admin
     router.get('/users/:id/subjects', [SubjectsController, 'byUser'])
+
+    // view all subjects
+    router.get('/subjects', [SubjectsController, 'index'])
   })
   .use([
     middleware.auth({ guards: ['api'] }),
@@ -57,7 +60,6 @@ router
 // -----------------------------
 router
   .group(() => {
-    router.get('/subjects',       [SubjectsController, 'index'])
     router.post('/subjects',      [SubjectsController, 'store'])
     router.get('/subjects/:id',   [SubjectsController, 'show'])
     router.put('/subjects/:id',   [SubjectsController, 'update'])
