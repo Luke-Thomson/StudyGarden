@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import {BaseModel, belongsTo, column} from '@adonisjs/lucid/orm'
 import User from "#models/user";
+import Subject from '#models/subject'
 import * as relations from "@adonisjs/lucid/types/relations";
 
 
@@ -13,6 +14,8 @@ export default class TimerSession extends BaseModel {
 
   @column()
   declare userId: number
+  @belongsTo(() => User)
+  declare user: relations.BelongsTo<typeof User>
 
   @column()
   declare mode: TimerMode
@@ -35,6 +38,8 @@ export default class TimerSession extends BaseModel {
   @column.dateTime({autoCreate: true, autoUpdate: true})
   declare updatedAt: DateTime
 
-  @belongsTo(() => User)
-  declare user: relations.BelongsTo<typeof User>
+  @column()
+  declare subjectId: number | null
+  @belongsTo(() => Subject)
+  declare subject: relations.BelongsTo<typeof Subject>
 }

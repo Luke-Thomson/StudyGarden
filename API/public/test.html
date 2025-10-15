@@ -136,7 +136,7 @@
       </div>
     </section>
 
-    
+
     <!-- Timer Sessions -->
     <section class="card stack">
       <h2>Timer Sessions</h2>
@@ -144,6 +144,13 @@
         <!-- START -->
         <div class="card stack" style="flex:1">
           <strong>Start Timer Session</strong>
+          <label class="small">Subject</label>
+          <div class="row">
+            <select id="subjectSelect" style="flex:1; min-width: 200px">
+              <option value="">Loading subjects…</option>
+            </select>
+            <button id="refreshSubjects" title="Reload subjects">↻</button>
+          </div>
           <label class="small">Mode</label>
           <select id="timerMode">
             <option value="STUDY">STUDY</option>
@@ -370,37 +377,52 @@
       if (hdr) { try { extra = JSON.parse(hdr) } catch { return alert('Invalid headers JSON') } }
       await request(method, path, body, extra)
     })
-  
+
     // ===== Timer session handlers =====
     const fmtIso = (s)=> { try { return new Date(s).toLocaleString() } catch { return s } };
 
-    if (document.getElementById('btnStartTimer')) {
-      document.getElementById('btnStartTimer').addEventListener('click', async ()=>{
-        let body;
-        const advEl = document.getElementById('timerAdvanced');
-        const modeEl = document.getElementById('timerMode');
-        const durEl  = document.getElementById('timerDuration');
-        const startMeta = document.getElementById('startMeta');
+    $('btnStartTimer').addEventListener('click', async ()=>{
+      const sel = document.getElementById('subjectSelect');
+      const subjectId = parseInt(sel?.value, 10);
 
-        const adv = advEl ? advEl.value.trim() : '';
-        if (adv) { try { body = JSON.parse(adv) } catch { alert('Invalid JSON in Advanced override'); return; } }
-        else { body = { mode: (modeEl?.value || 'STUDY'), durationSec: parseInt(durEl?.value)||1500 }; }
+      if (!subjectId) {
+        alert('Please select a subject.');
+        return;
+      }
 
-        const { data } = await request('POST', '/timer/start', body);
-        if (data && data.sessionId){
-          localStorage.setItem('last_sessionId', data.sessionId);
-          const stopId = document.getElementById('stopSessionId');
-          if (stopId) stopId.value = data.sessionId;
-        }
-        const bits = [];
-        if (data?.sessionId) bits.push(`sessionId: ${data.sessionId}`);
-        if (data?.mode) bits.push(`mode: ${data.mode}`);
-        if (data?.serverNow) bits.push(`serverNow: ${fmtIso(data.serverNow)}`);
-        if (data?.plannedEndAt) bits.push(`plannedEndAt: ${fmtIso(data.plannedEndAt)}`);
-        if (data?.expectedDurationSec != null) bits.push(`expectedDurationSec: ${data.expectedDurationSec}s`);
-        if (startMeta) startMeta.textContent = bits.join(' • ');
-      });
-    }
+      let body;
+      const adv = $('timerAdvanced').value.trim();
+      if (adv) {
+        try { body = JSON.parse(adv) } catch { alert('Invalid JSON in Advanced override'); return; }
+        // Force subjectId from dropdown to avoid mismatch
+        body.subjectId = subjectId;
+      } else {
+        body = {
+          mode: $('timerMode').value || 'STUDY',
+          durationSec: parseInt($('timerDuration').value) || 1500,
+          subjectId
+        };
+      }
+
+      // persist last chosen subject
+      localStorage.setItem('last_subjectId', String(subjectId));
+
+      const { data } = await request('POST', '/timer/start', body);
+
+      if (data && data.sessionId){
+        localStorage.setItem('last_sessionId', data.sessionId);
+        $('stopSessionId').value = data.sessionId;
+      }
+      const fmtIso = (s)=> { try { return new Date(s).toLocaleString() } catch { return s } }
+      const meta = [];
+      if (data?.sessionId) meta.push(`sessionId: ${data.sessionId}`);
+      if (data?.mode) meta.push(`mode: ${data.mode}`);
+      if (data?.serverNow) meta.push(`serverNow: ${fmtIso(data.serverNow)}`);
+      if (data?.plannedEndAt) meta.push(`plannedEndAt: ${fmtIso(data.plannedEndAt)}`);
+      if (data?.expectedDurationSec != null) meta.push(`expectedDurationSec: ${data.expectedDurationSec}s`);
+      $('startMeta').textContent = meta.join(' • ');
+    });
+
 
     if (document.getElementById('btnStopTimer')) {
       document.getElementById('btnStopTimer').addEventListener('click', ()=>{
@@ -417,6 +439,51 @@
         });
       });
     }
+
+    // ===== Subjects dropdown helpers =====
+    function normalizeSubjectsPayload(payload) {
+      // supports: [{id,title}, ...] OR {data:[...]} OR {subjects:[...]}
+      const arr =
+        Array.isArray(payload) ? payload :
+          Array.isArray(payload?.data) ? payload.data :
+            Array.isArray(payload?.subjects) ? payload.subjects :
+              [];
+      return arr.map(s => ({
+        id: s.id ?? s.subjectId ?? s.ID ?? s.Id,
+        title: s.title ?? s.name ?? s.SubjectName ?? ('Subject ' + (s.id ?? '?')),
+      })).filter(s => s.id != null);
+    }
+
+    async function loadSubjects() {
+      const sel = document.getElementById('subjectSelect');
+      if (!sel) return;
+
+      sel.innerHTML = `<option value="">Loading subjects…</option>`;
+      try {
+        const { data } = await request('GET', '/me/subjects');
+        const subjects = normalizeSubjectsPayload(data);
+
+        if (!subjects.length) {
+          sel.innerHTML = `<option value="">No subjects found</option>`;
+          return;
+        }
+
+        const last = localStorage.getItem('last_subjectId');
+        sel.innerHTML = `<option value="">Select a subject…</option>` +
+          subjects.map(s => {
+            const selected = String(s.id) === String(last) ? 'selected' : '';
+            return `<option value="${s.id}" ${selected}>${s.title} (id ${s.id})</option>`;
+          }).join('');
+      } catch (e) {
+        sel.innerHTML = `<option value="">Failed to load subjects</option>`;
+      }
+    }
+
+    // Load when the page starts (if token is set) and on demand
+    document.addEventListener('DOMContentLoaded', () => {
+      if (state.token) loadSubjects();
+    });
+    document.getElementById('refreshSubjects')?.addEventListener('click', loadSubjects);
 
   </script>
 </body>

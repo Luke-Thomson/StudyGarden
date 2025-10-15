@@ -1,15 +1,16 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { DateTime } from 'luxon'
 import TimerSession from '#models/timer_session'
+import Subject from "#models/subject";
 
 type TimerMode = 'STUDY' | 'BREAK_SHORT' | 'BREAK_LONG'
 
 export default class TimersController {
-  // POST /api/timer/start  body: { mode?: 'STUDY'|'BREAK_SHORT'|'BREAK_LONG', durationSec: number|string }
+  // POST /api/timer/start  body: { mode?: 'STUDY'|'BREAK_SHORT'|'BREAK_LONG', durationSec: number|string, subjectId?: number|string }
   public async start({ auth, request, response }: HttpContext) {
     const user = await auth.authenticate()
 
-    // Coerce + validate inputs
+    // inputs
     const rawMode = request.input('mode', 'STUDY')
     const mode: TimerMode =
       rawMode === 'BREAK_SHORT' || rawMode === 'BREAK_LONG' ? rawMode : 'STUDY'
@@ -19,7 +20,26 @@ export default class TimersController {
       return response.badRequest({ message: 'durationSec must be a number between 60 and 3600' })
     }
 
-    // Disallow or auto-abandon a running session
+    // For STUDY, subjectId is required and must belong to the user
+    let subjectId: number | null = null
+    if (mode === 'STUDY') {
+      const rawSubjectId = request.input('subjectId')
+      subjectId = Number(rawSubjectId)
+      if (!Number.isFinite(subjectId) || subjectId < 1) {
+        return response.badRequest({ message: 'subjectId is required for STUDY mode' })
+      }
+      const subject = await Subject
+        .query()
+        .where('id', subjectId)
+        .where('userId', user.id)
+        .first()
+
+      if (!subject) {
+        return response.forbidden({ message: 'Subject not found or not owned by user' })
+      }
+    }
+
+    // disallow or auto-abandon previous running session
     const existing = await TimerSession.query()
       .where('userId', user.id)
       .where('status', 'RUNNING')
@@ -27,7 +47,7 @@ export default class TimersController {
 
     if (existing) {
       const plannedEnd = existing.startedAt.plus({ seconds: existing.expectedDurationSec })
-      if (DateTime.now() > plannedEnd.plus({ seconds: 30 })) {
+      if (DateTime.now() > plannedEnd.plus({ seconds: 30 })) {  //grace period
         existing.status = 'ABANDONED'
         existing.endedAt = plannedEnd
         await existing.save()
@@ -43,6 +63,7 @@ export default class TimersController {
       expectedDurationSec: durationSec,
       status: 'RUNNING',
       startedAt: now,
+      subjectId, // null for breaks; subjectId for study
     })
 
     return response.ok({
@@ -51,6 +72,7 @@ export default class TimersController {
       plannedEndAt: now.plus({ seconds: durationSec }).toISO(),
       mode: session.mode,
       expectedDurationSec: durationSec,
+      subjectId: session.subjectId,
     })
   }
 
