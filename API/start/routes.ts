@@ -7,6 +7,8 @@ const UsersController   = () => import('#controllers/users_controller')     // a
 const SubjectsController= () => import('#controllers/subjects_controller')  // subjects CRUD
 const MeController      = () => import('#controllers/me_controller')        // current user
 
+const TimerController      = () => import('#controllers/timers_controller')        // timer controls
+
 // -----------------------------
 // Auth (session/token endpoints)
 // -----------------------------
@@ -35,7 +37,7 @@ router
   })
   .use([
     middleware.auth({ guards: ['api'] }),
-    middleware.role(),                           // <-- our custom Role middleware
+    middleware.role(),                           // <-- our custom Role middleware allows only admin
   ])
 
 // -----------------------------
@@ -46,6 +48,7 @@ router
     router.get('/me',            [MeController, 'show'])
     router.put('/me',            [MeController, 'update'])
     router.get('/me/subjects',   [SubjectsController, 'mine'])
+    router.get('/me/sessions',   [TimerController, 'mine'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 
@@ -59,10 +62,18 @@ router
     router.get('/subjects/:id',   [SubjectsController, 'show'])
     router.put('/subjects/:id',   [SubjectsController, 'update'])
     router.delete('/subjects/:id',[SubjectsController, 'destroy'])
-
   })
   .use(middleware.auth({ guards: ['api'] }))
 
+// -----------------------------
+// Timer controls
+// -----------------------------
+router
+  .group(() => {
+    router.post('/timer/start', [TimerController, 'start'])
+    router.post('/timer/stop', [TimerController, 'stop'])
+  })
+  .use(middleware.auth({ guards: ['api'] }))
 
 // Swagger
 import AutoSwagger from "adonis-autoswagger";

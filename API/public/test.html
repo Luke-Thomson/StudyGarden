@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minimal API Tester</title>
+  <style>
+    :root { --gap: 10px; --pad: 12px; --radius: 10px; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#0b1020; color:#e8ecf1; }
+    header { padding: 16px; background:#0f172a; position: sticky; top: 0; z-index: 1; border-bottom:1px solid #1f2a44; }
+    h1 { font-size: 18px; margin:0 0 8px; }
+    .row { display:flex; gap: var(--gap); flex-wrap: wrap; }
+    .card { background:#111928; border:1px solid #1f2a44; border-radius: var(--radius); padding: var(--pad); }
+    .stack { display:flex; flex-direction: column; gap: 8px; }
+    input, select, button, textarea { background:#0b1325; color:#e8ecf1; border:1px solid #1f2a44; border-radius: 8px; padding:10px; font:inherit; }
+    input::placeholder, textarea::placeholder { color:#8aa0c5; }
+    button { cursor:pointer; }
+    button.primary { background:#2563eb; border-color:#2563eb; }
+    button.warn { background:#ef4444; border-color:#ef4444; }
+    code.badge { background:#15213a; border:1px solid #223457; padding:2px 6px; border-radius:6px; }
+    .grid { display:grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .small { font-size: 12px; opacity:.85; }
+    .muted { color:#9fb3d6; }
+    .k { color:#cbd5e1; }
+    #out { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0a0f1e; border:1px solid #1f2a44; border-radius: var(--radius); padding: var(--pad); max-height: 45vh; overflow:auto; }
+    .sep { height:1px; background:#1f2a44; margin: 12px 0; border:0; }
+    .pill { padding:4px 8px; border-radius:999px; border:1px solid #1f2a44; background:#0b1325; font-size:12px; display:inline-block; }
+    .endpoint { display:flex; align-items:center; gap:8px; }
+    .method { font-weight:700; text-transform: uppercase; }
+    .GET{color:#22d3ee}.POST{color:#4ade80}.PUT{color:#facc15}.DELETE{color:#f87171}
+    a { color:#93c5fd; }
+  </style>
+</head>
+<body>
+  <header class="stack">
+    <h1>Minimal API Tester</h1>
+    <div class="row">
+      <label class="card stack" style="flex:1 1 320px">
+        <span class="small muted">API Base URL</span>
+        <input id="baseUrl" placeholder="http://localhost:3333" />
+      </label>
+      <div class="card stack" style="flex:1 1 320px">
+        <span class="small muted">Auth Token (Bearer)</span>
+        <div class="row">
+          <input id="token" placeholder="Will populate on login if response includes a token" style="flex:1" />
+          <button id="clearToken" class="warn">Logout/clear</button>
+        </div>
+        <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+      </div>
+      <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+        <span class="small muted">Docs</span>
+        <div class="row">
+          <button id="openSwagger">/swagger</button>
+          <button id="openDocs">/docs</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="stack" style="padding:16px; gap:16px;">
+    <!-- Auth -->
+    <section class="grid">
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Register</strong>
+          <span class="pill">POST /register</span>
+        </div>
+        <input id="regName" placeholder="name (optional)" />
+        <input id="regEmail" placeholder="email" />
+        <input id="regPassword" placeholder="password" type="password" />
+        <button class="primary" id="btnRegister">Register</button>
+        <span class="small muted">Adjust the field names below if your API expects different keys.</span>
+      </div>
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Login</strong>
+          <span class="pill">POST /login</span>
+        </div>
+        <input id="loginEmail" placeholder="email" />
+        <input id="loginPassword" placeholder="password" type="password" />
+        <button class="primary" id="btnLogin">Login</button>
+        <span class="small muted">Saves <code class="badge">Authorization: Bearer &lt;token&gt;</code> if present in response.</span>
+      </div>
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Logout</strong>
+          <span class="pill">DELETE /logout</span>
+        </div>
+        <button id="btnLogout">Call /logout</button>
+        <span class="small muted">Also clears local token.</span>
+      </div>
+    </section>
+
+    <!-- Quick hits -->
+    <section class="grid">
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Quick: Me</strong>
+          <span class="pill">GET /me</span>
+        </div>
+        <button id="btnMe">GET /me</button>
+        <button id="btnMySubjects">GET /me/subjects</button>
+        <button id="btnMySessions">GET /me/sessions</button>
+      </div>
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Quick: Users</strong>
+          <span class="pill">auth, role</span>
+        </div>
+        <div class="row">
+          <button id="btnUsers">GET /users</button>
+          <input id="userId" placeholder=":id" style="width:120px" />
+        </div>
+        <div class="row">
+          <button id="btnUserShow">GET /users/:id</button>
+          <button id="btnUserDelete" class="warn">DELETE /users/:id</button>
+        </div>
+      </div>
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Quick: Subjects</strong>
+          <span class="pill">auth</span>
+        </div>
+        <div class="row">
+          <button id="btnSubjectsIndex">GET /subjects</button>
+          <input id="subjectId" placeholder=":id" style="width:120px" />
+        </div>
+        <textarea id="subjectBody" rows="5" placeholder='JSON body for POST/PUT, e.g. {"title":"Discrete Math"}'></textarea>
+        <div class="row">
+          <button id="btnSubjectStore" class="primary">POST /subjects</button>
+          <button id="btnSubjectShow">GET /subjects/:id</button>
+          <button id="btnSubjectUpdate">PUT /subjects/:id</button>
+          <button id="btnSubjectDelete" class="warn">DELETE /subjects/:id</button>
+        </div>
+      </div>
+    </section>
+
+    
+    <!-- Timer Sessions -->
+    <section class="card stack">
+      <h2>Timer Sessions</h2>
+      <div class="row">
+        <!-- START -->
+        <div class="card stack" style="flex:1">
+          <strong>Start Timer Session</strong>
+          <label class="small">Mode</label>
+          <select id="timerMode">
+            <option value="STUDY">STUDY</option>
+            <option value="BREAK_SHORT">BREAK SHORT</option>
+            <option value="BREAK_LONG">BREAK LONG</option>
+          </select>
+          <label class="small">Duration (seconds)</label>
+          <input id="timerDuration" type="number" min="1" placeholder="e.g. 1500" />
+
+          <details>
+            <summary>Advanced JSON override (optional)</summary>
+            <textarea id="timerAdvanced" rows="5" placeholder='{"mode":"STUDY","durationSec":1500}'></textarea>
+          </details>
+
+          <button id="btnStartTimer" class="primary">POST /timer/start</button>
+          <hr class="sep" />
+          <div class="small" id="startMeta" style="opacity:.9"></div>
+        </div>
+
+        <!-- STOP -->
+        <div class="card stack" style="flex:1">
+          <strong>Stop Timer Session</strong>
+          <label class="small">sessionId</label>
+          <input id="stopSessionId" type="number" placeholder="sessionId" />
+          <button id="btnStopTimer" class="warn">POST /timer/stop</button>
+          <hr class="sep" />
+          <div class="small" id="stopMeta" style="opacity:.9"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Generic request builder -->
+    <section class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Generic Request</strong>
+        <span class="small muted">Use this for any route</span>
+      </div>
+      <div class="row">
+        <select id="method">
+          <option>GET</option>
+          <option>POST</option>
+          <option>PUT</option>
+          <option>DELETE</option>
+        </select>
+        <input id="path" placeholder="/route (e.g. /users/1)" style="flex:1" />
+        <button id="send">Send</button>
+      </div>
+      <textarea id="body" rows="6" placeholder='Optional JSON body'></textarea>
+      <details>
+        <summary>Headers (JSON) — optional</summary>
+        <textarea id="headers" rows="4" placeholder='{"X-Example":"123"}'></textarea>
+      </details>
+    </section>
+
+    <!-- Output -->
+    <section class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+        <div class="row small">
+          <span id="statusBadge" class="pill">—</span>
+        </div>
+      </div>
+      <div id="out">Response will appear here…</div>
+    </section>
+
+    <p class="small muted">Tip: If your login payload/token shape is different, tweak <em>extractToken()</em> and the auth payload fields near the top of the script.</p>
+  </main>
+
+  <script>
+    // ===== Utilities =====
+    const $ = (id) => document.getElementById(id)
+    const state = {
+      get baseUrl(){ return localStorage.getItem('api_base') || 'http://localhost:3333' },
+      set baseUrl(v){ localStorage.setItem('api_base', v) },
+      get token(){ return localStorage.getItem('api_token') || '' },
+      set token(v){ v ? localStorage.setItem('api_token', v) : localStorage.removeItem('api_token') },
+    }
+
+    function setUIFromState(){
+      $('baseUrl').value = state.baseUrl
+      $('token').value = state.token
+    }
+
+    function setStatus(code){
+      const badge = $('statusBadge')
+      if(!code){ badge.textContent='—'; return }
+      badge.textContent = 'HTTP ' + code
+      badge.style.background = code >= 200 && code < 300 ? '#065f46' : '#7f1d1d'
+      badge.style.borderColor = code >= 200 && code < 300 ? '#065f46' : '#7f1d1d'
+    }
+
+    function fmt(obj){
+      try { return JSON.stringify(obj, null, 2) } catch { return String(obj) }
+    }
+
+    function url(path){
+      const base = state.baseUrl.replace(/\/$/, '')
+      const p = path.startsWith('/') ? path : '/' + path
+      return base + p
+    }
+
+    function show(method, fullUrl, res, data){
+      $('lastMethod').textContent = method
+      $('lastMethod').className = 'method ' + method
+      $('lastUrl').textContent = fullUrl
+      setStatus(res?.status)
+      const headers = {}
+      if (res && res.headers) { res.headers.forEach((v,k)=>headers[k]=v) }
+      $('out').textContent = fmt({
+        url: fullUrl,
+        status: res?.status,
+        headers,
+        body: data
+      })
+    }
+
+    // Try to pull token from various common response shapes
+    function extractToken(obj){
+      if (!obj || typeof obj !== 'object') return ''
+      if (obj.token) return obj.token
+      if (obj.access_token) return obj.access_token
+      if (obj.data && (obj.data.token || obj.data.access_token)) return obj.data.token || obj.data.access_token
+      if (obj.meta && obj.meta.token) return obj.meta.token
+      return ''
+    }
+
+    async function request(method, path, body=null, extraHeaders={}){
+      const fullUrl = url(path)
+      const headers = { 'Content-Type': 'application/json', ...extraHeaders }
+      if (state.token) headers['Authorization'] = 'Bearer ' + state.token
+      const res = await fetch(fullUrl, {
+        method, headers,
+        body: body ? JSON.stringify(body) : (method === 'GET' || method === 'DELETE' ? undefined : '{}'),
+      })
+      let data
+      try { data = await res.json() } catch { data = await res.text() }
+      show(method, fullUrl, res, data)
+      return { res, data }
+    }
+
+    // ===== Wire up basics =====
+    setUIFromState()
+    $('baseUrl').addEventListener('change', e=>{ state.baseUrl = e.target.value })
+    $('token').addEventListener('change', e=>{ state.token = e.target.value })
+    $('clearToken').addEventListener('click', ()=>{ state.token = ''; setUIFromState() })
+
+    $('openSwagger').addEventListener('click', ()=> window.open(url('/swagger'), '_blank'))
+    $('openDocs').addEventListener('click', ()=> window.open(url('/docs'), '_blank'))
+
+    // ===== Auth actions =====
+    $('btnRegister').addEventListener('click', async ()=>{
+      const payload = {
+        name: $('regName').value || undefined,
+        email: $('regEmail').value,
+        password: $('regPassword').value,
+      }
+      const { data } = await request('POST', '/register', payload)
+      const t = extractToken(data)
+      if (t){ state.token = t; setUIFromState() }
+    })
+
+    $('btnLogin').addEventListener('click', async ()=>{
+      const payload = {
+        email: $('loginEmail').value,
+        password: $('loginPassword').value,
+      }
+      const { data } = await request('POST', '/login', payload)
+      const t = extractToken(data)
+      if (t){ state.token = t; setUIFromState() }
+    })
+
+    $('btnLogout').addEventListener('click', async ()=>{
+      await request('DELETE', '/logout')
+      state.token = ''
+      setUIFromState()
+    })
+
+    // ===== Quick routes =====
+    $('btnMe').addEventListener('click', ()=> request('GET', '/me'))
+    $('btnMySubjects').addEventListener('click', ()=> request('GET', '/me/subjects'))
+    $('btnMySessions').addEventListener('click', ()=> request('GET', '/me/sessions'))
+
+    $('btnUsers').addEventListener('click', ()=> request('GET', '/users'))
+    $('btnUserShow').addEventListener('click', ()=>{
+      const id = $('userId').value.trim(); if (!id) return alert('Provide :id')
+      request('GET', `/users/${id}`)
+    })
+    $('btnUserDelete').addEventListener('click', ()=>{
+      const id = $('userId').value.trim(); if (!id) return alert('Provide :id')
+      request('DELETE', `/users/${id}`)
+    })
+
+    $('btnSubjectsIndex').addEventListener('click', ()=> request('GET', '/subjects'))
+    $('btnSubjectShow').addEventListener('click', ()=>{
+      const id = $('subjectId').value.trim(); if (!id) return alert('Provide :id')
+      request('GET', `/subjects/${id}`)
+    })
+    $('btnSubjectDelete').addEventListener('click', ()=>{
+      const id = $('subjectId').value.trim(); if (!id) return alert('Provide :id')
+      request('DELETE', `/subjects/${id}`)
+    })
+    $('btnSubjectStore').addEventListener('click', ()=>{
+      let body
+      try { body = JSON.parse($('subjectBody').value || '{}') } catch { return alert('Invalid JSON in subject body') }
+      request('POST', '/subjects', body)
+    })
+    $('btnSubjectUpdate').addEventListener('click', ()=>{
+      const id = $('subjectId').value.trim(); if (!id) return alert('Provide :id')
+      let body
+      try { body = JSON.parse($('subjectBody').value || '{}') } catch { return alert('Invalid JSON in subject body') }
+      request('PUT', `/subjects/${id}`, body)
+    })
+
+    // ===== Generic builder =====
+    $('send').addEventListener('click', async ()=>{
+      const method = $('method').value
+      const path = $('path').value || '/'
+      let body = null
+      const raw = $('body').value.trim()
+      if (raw) { try { body = JSON.parse(raw) } catch { return alert('Invalid JSON body') } }
+      let extra = {}
+      const hdr = $('headers').value.trim()
+      if (hdr) { try { extra = JSON.parse(hdr) } catch { return alert('Invalid headers JSON') } }
+      await request(method, path, body, extra)
+    })
+  
+    // ===== Timer session handlers =====
+    const fmtIso = (s)=> { try { return new Date(s).toLocaleString() } catch { return s } };
+
+    if (document.getElementById('btnStartTimer')) {
+      document.getElementById('btnStartTimer').addEventListener('click', async ()=>{
+        let body;
+        const advEl = document.getElementById('timerAdvanced');
+        const modeEl = document.getElementById('timerMode');
+        const durEl  = document.getElementById('timerDuration');
+        const startMeta = document.getElementById('startMeta');
+
+        const adv = advEl ? advEl.value.trim() : '';
+        if (adv) { try { body = JSON.parse(adv) } catch { alert('Invalid JSON in Advanced override'); return; } }
+        else { body = { mode: (modeEl?.value || 'STUDY'), durationSec: parseInt(durEl?.value)||1500 }; }
+
+        const { data } = await request('POST', '/timer/start', body);
+        if (data && data.sessionId){
+          localStorage.setItem('last_sessionId', data.sessionId);
+          const stopId = document.getElementById('stopSessionId');
+          if (stopId) stopId.value = data.sessionId;
+        }
+        const bits = [];
+        if (data?.sessionId) bits.push(`sessionId: ${data.sessionId}`);
+        if (data?.mode) bits.push(`mode: ${data.mode}`);
+        if (data?.serverNow) bits.push(`serverNow: ${fmtIso(data.serverNow)}`);
+        if (data?.plannedEndAt) bits.push(`plannedEndAt: ${fmtIso(data.plannedEndAt)}`);
+        if (data?.expectedDurationSec != null) bits.push(`expectedDurationSec: ${data.expectedDurationSec}s`);
+        if (startMeta) startMeta.textContent = bits.join(' • ');
+      });
+    }
+
+    if (document.getElementById('btnStopTimer')) {
+      document.getElementById('btnStopTimer').addEventListener('click', ()=>{
+        const stopId = document.getElementById('stopSessionId');
+        const sessionId = parseInt(stopId?.value) || parseInt(localStorage.getItem('last_sessionId'));
+        if (!sessionId) { alert('Provide a sessionId'); return; }
+        request('POST', '/timer/stop', { sessionId }).then(({ data })=>{
+          const stopMeta = document.getElementById('stopMeta');
+          const bits = [];
+          if (data?.message) bits.push(data.message);
+          if (data?.sessionId) bits.push('sessionId: ' + data.sessionId);
+          if (data?.actualSeconds != null) bits.push('actualSeconds: ' + data.actualSeconds);
+          if (stopMeta) stopMeta.textContent = bits.join(' • ');
+        });
+      });
+    }
+
+  </script>
+</body>
+</html>
