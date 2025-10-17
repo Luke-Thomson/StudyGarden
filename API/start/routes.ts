@@ -56,7 +56,7 @@ router
   .use(middleware.auth({ guards: ['api'] }))
 
 // -----------------------------
-// Subjects (owner-only by policy; admin sees all)
+// Subjects (owner-only)
 // -----------------------------
 router
   .group(() => {
@@ -68,7 +68,7 @@ router
   .use(middleware.auth({ guards: ['api'] }))
 
 // -----------------------------
-// Timer controls
+// Timer controls (owner-only)
 // -----------------------------
 router
   .group(() => {
