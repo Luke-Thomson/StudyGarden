@@ -1,74 +1,56 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Subject from '#models/subject'
 import SubjectPolicy from '#policies/subject_policy'
+import SubjectService from '#services/subject_service'
+import { subjectStoreValidator } from '#validators/subject_store'
+import { subjectUpdateValidator } from '#validators/subject_update'
 
 export default class SubjectsController {
-  /**
-   * Display a list of resource
-   * GET /subjects
-   */
+  private service = new SubjectService()
+
+  // GET /subjects
   public async index({ auth }: HttpContext) {
     const user = auth.user!
-    // admin gets all subjects
-    if (user.role === 'admin') {
-      return Subject.query().preload('user')
-    }
-    // users gets only their subjects
-    return Subject.query().where('user_id', user.id)
+    return this.service.listForUser({ id: user.id, role: user.role })
   }
 
-
-  /**
-   * Handle form submission for the create action
-   * POST /subjects
-   */
-  public async store({ auth, request, bouncer }: HttpContext) {
+  // POST /subjects
+  public async store({ auth, request, bouncer, response }: HttpContext) {
     await bouncer.with(SubjectPolicy).authorize('create')
-    const { title } = request.only(['title'])
-    return Subject.create({ title, userId: auth.user!.id }) // never accept userId from client
+    const payload = await request.validateUsing(subjectStoreValidator)
+    const subject = await this.service.createForUser(auth.user!.id, payload)
+    return response.created(subject)
   }
 
-  /**
-   * Show individual record
-   * GET /subjects/:id
-   */
+  // GET /subjects/:id
   public async show({ params, bouncer }: HttpContext) {
-    const subject = await Subject.findOrFail(params.id)
+    const subject = await this.service.get(Number(params.id))
     await bouncer.with(SubjectPolicy).authorize('view', subject)
     return subject
   }
 
-  /**
-   * Handle form submission for the edit action
-   * PATCH /subjects/:id
-   */
+  // PATCH /subjects/:id
   public async update({ params, request, bouncer }: HttpContext) {
-    const subject = await Subject.findOrFail(params.id)
+    const subject = await this.service.get(Number(params.id))
     await bouncer.with(SubjectPolicy).authorize('edit', subject)
-    subject.merge(request.only(['title']))
-    await subject.save()
-    return subject
+    const data = await request.validateUsing(subjectUpdateValidator)
+    return this.service.update(subject.id, data)
   }
 
-  /**
-   * Delete record
-   * DELETE /subjects/:id
-   */
+  // DELETE /subjects/:id
   public async destroy({ params, bouncer, response }: HttpContext) {
-    const subject = await Subject.findOrFail(params.id)
+    const subject = await this.service.get(Number(params.id))
     await bouncer.with(SubjectPolicy).authorize('delete', subject)
-    await subject.delete()
+    await this.service.destroy(subject.id)
     return response.noContent()
   }
 
   // GET /me/subjects
   public async mine({ auth }: HttpContext) {
-    const user = auth.user!
-    return Subject.query().where('user_id', user.id)
+    return this.service.listMine(auth.user!.id)
   }
 
   // GET /users/:id/subjects (admin-only route group)
   public async byUser({ params }: HttpContext) {
-    return Subject.query().where('user_id', Number(params.id))
+    return this.service.listByUserId(Number(params.id))
   }
 }
