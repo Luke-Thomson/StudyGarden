@@ -70,12 +70,15 @@ export default class TimerService {
 
   /**
    * Stop a running session owned by the user.
+   * Sets server-trusted endedAt, computes actualSeconds, and marks COMPLETED.
+   * Returns the saved session + actualSeconds for UI/analytics.
    */
   public async stopSession(userId: number, sessionId: number) {
     const s = await TimerSession.find(sessionId)
     if (!s || s.userId !== userId) return { error: 'NOT_OWNED_OR_NOT_FOUND' } as const
     if (s.status !== 'RUNNING') return { error: 'NOT_RUNNING' } as const
 
+    // Server chooses a safe end time: min(now, plannedEnd + GRACE)
     const plannedEnd = s.startedAt.plus({ seconds: s.expectedDurationSec })
     const now = DateTime.now()
     const maxEnd = plannedEnd.plus({ seconds: this.GRACE_SEC })
@@ -83,7 +86,7 @@ export default class TimerService {
 
     s.endedAt = endAt
     s.status = 'COMPLETED'
-    await s.save()
+    await s.save() // <-- WalletService relies on startedAt/endedAt being persisted
 
     const actualSeconds = Math.max(0, endAt.diff(s.startedAt, 'seconds').seconds)
     return { session: s, actualSeconds } as const

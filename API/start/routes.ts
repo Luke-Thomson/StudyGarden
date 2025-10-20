@@ -7,6 +7,8 @@ const UsersController   = () => import('#controllers/users_controller')     // a
 const SubjectsController= () => import('#controllers/subjects_controller')  // subjects CRUD
 const MeController      = () => import('#controllers/me_controller')        // current user
 
+const WalletController = () => import('#controllers/wallets_controller')
+
 const TimerController      = () => import('#controllers/timers_controller')        // timer controls
 
 // -----------------------------
@@ -53,6 +55,8 @@ router
     router.get('/me/subjects',   [SubjectsController, 'mine'])
     router.get('/me/sessions',   [TimerController, 'mine'])
     router.get('/me/sessions/totals',   [TimerController, 'total'])
+    router.get('/me/wallet', [WalletController, 'show'])
+    router.get('/me/coins/ledger', [WalletController, 'ledger'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 
