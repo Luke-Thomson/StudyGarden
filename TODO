@@ -1,7 +1,0 @@
-add vine validators to controllers (or separate file)
-make separate service files (make controllers lean)
-add models for courses and times
-
-for times i think we start a session and then every break/pause
-is sent to the server and the total is the (total session time - breaks)
-allowing for any length of break and study time

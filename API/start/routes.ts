@@ -52,6 +52,7 @@ router
     router.put('/me',            [MeController, 'update'])
     router.get('/me/subjects',   [SubjectsController, 'mine'])
     router.get('/me/sessions',   [TimerController, 'mine'])
+    router.get('/me/sessions/totals',   [TimerController, 'total'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 

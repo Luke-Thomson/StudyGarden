@@ -102,6 +102,7 @@
         <button id="btnMe">GET /me</button>
         <button id="btnMySubjects">GET /me/subjects</button>
         <button id="btnMySessions">GET /me/sessions</button>
+        <button id="btnMySessionsTotal">GET /me/sessions/totals</button>
       </div>
       <div class="card stack">
         <div class="row" style="justify-content:space-between; align-items:center;">
@@ -333,6 +334,7 @@
     $('btnMe').addEventListener('click', ()=> request('GET', '/me'))
     $('btnMySubjects').addEventListener('click', ()=> request('GET', '/me/subjects'))
     $('btnMySessions').addEventListener('click', ()=> request('GET', '/me/sessions'))
+    $('btnMySessionsTotal').addEventListener('click', ()=> request('GET', '/me/sessions/totals'))
 
     $('btnUsers').addEventListener('click', ()=> request('GET', '/users'))
     $('btnUserShow').addEventListener('click', ()=>{

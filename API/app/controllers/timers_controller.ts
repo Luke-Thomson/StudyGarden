@@ -68,5 +68,11 @@ export default class TimersController {
     const user = await auth.authenticate()
     return this.service.listMine(user.id)
   }
+
+  // GET /me/sessions/totals
+  public async total({ auth }: HttpContext) {
+    const user = await auth.authenticate()
+    return this.service.myTotal(user.id)
+  }
 }
 

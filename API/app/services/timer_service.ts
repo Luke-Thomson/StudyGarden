@@ -95,4 +95,30 @@ export default class TimerService {
   public async listMine(userId: number) {
     return TimerSession.query().where('userId', userId)
   }
+
+  /**
+   * List session totals for the user.
+   * Returns total completed study time in seconds and minutes.
+   */
+  public async myTotal(userId: number) {
+    // Only count completed STUDY sessions
+    const sessions = await TimerSession.query()
+      .where('userId', userId)
+      .where('mode', 'STUDY')
+      .where('status', 'COMPLETED')
+
+    let totalSeconds = 0
+
+    for (const s of sessions) {
+      if (s.startedAt && s.endedAt) {
+        totalSeconds += s.endedAt.diff(s.startedAt, 'seconds').seconds
+      }
+    }
+
+    return {
+      totalSeconds,
+      totalMinutes: Math.floor(totalSeconds / 60),
+      sessionsCount: sessions.length,
+    }
+  }
 }
