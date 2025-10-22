@@ -208,7 +208,12 @@ export default class WalletService {
     const baseRate = 1
     const coins = Math.max(0, Math.floor(minutes * baseRate))
 
-    // 5) Credit
-    return await this.credit(userId, coins, 'SESSION_CREDIT', sessionId)
+    // 5) Credit and include coin count in return
+    const creditResult = await this.credit(userId, coins, 'SESSION_CREDIT', sessionId)
+
+    return {
+      ...creditResult,
+      coins
+    }
   }
 }
