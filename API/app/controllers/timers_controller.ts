@@ -57,8 +57,6 @@ export default class TimersController {
     }
 
     // 3) Credit coins
-    //    - Uses session.startedAt/endedAt you just saved
-    //    - Skips if < 5 minutes (per service rule), or if already credited
     const creditInfo = await WalletService.creditForSession(result.session.id)
 
     // 4) Fetch fresh wallet balance for the response

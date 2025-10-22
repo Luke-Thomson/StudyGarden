@@ -39,10 +39,13 @@ router
 
     // view all subjects
     router.get('/subjects', [SubjectsController, 'index'])
+
+    // add or remove coins from user
+    router.post('/wallet/adjust', [WalletController, 'adjust'])
   })
   .use([
     middleware.auth({ guards: ['api'] }),
-    middleware.role(),                           // <-- our custom Role middleware allows only admin
+    middleware.role(),                           // <-- custom role middleware allows only admin
   ])
 
 // -----------------------------

@@ -208,7 +208,7 @@ export default class WalletService {
     const baseRate = 1
     const coins = Math.max(0, Math.floor(minutes * baseRate))
 
-    // 5) Credit idempotently
+    // 5) Credit
     return await this.credit(userId, coins, 'SESSION_CREDIT', sessionId)
   }
 }

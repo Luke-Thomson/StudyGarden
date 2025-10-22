@@ -185,6 +185,34 @@
       </div>
     </section>
 
+    <!-- Admin -->
+    <section class="card stack">
+      <h2>Admin</h2>
+
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <strong>Wallet Adjust</strong>
+          <span class="pill">POST /wallet/adjust</span>
+        </div>
+
+        <p class="small muted">
+          Adjust a user's wallet balance. Requires admin role. Payload is editable JSON.
+        </p>
+
+        <textarea id="walletAdjustBody" rows="6" placeholder='{"userId":42,"amount":100}'></textarea>
+
+        <div class="row" style="align-items:center; gap:10px;">
+          <button id="btnWalletAdjust" class="primary">POST /wallet/adjust</button>
+          <label class="small" style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="walletRemember" />
+            remember payload
+          </label>
+        </div>
+
+        <hr class="sep" />
+        <div class="small" id="walletAdjustMeta" style="opacity:.9"></div>
+      </div>
+    </section>
 
     <!-- Generic request builder -->
     <section class="card stack">
@@ -491,6 +519,63 @@
     });
     document.getElementById('refreshSubjects')?.addEventListener('click', loadSubjects);
 
+    // ===== Admin: Wallet Adjust =====
+    (function initWalletAdjust() {
+      const ta = document.getElementById('walletAdjustBody');
+      const remember = document.getElementById('walletRemember');
+      const meta = document.getElementById('walletAdjustMeta');
+      const btn = document.getElementById('btnWalletAdjust');
+
+      if (!ta || !btn) return;
+
+      // Load saved payload or sensible default
+      const saved = localStorage.getItem('wallet_adjust_body');
+      ta.value = saved || JSON.stringify({ amount: 100 }, null, 2);
+      remember.checked = !!saved;
+
+      remember?.addEventListener('change', () => {
+        if (remember.checked) {
+          localStorage.setItem('wallet_adjust_body', ta.value);
+        } else {
+          localStorage.removeItem('wallet_adjust_body');
+        }
+      });
+
+      ta.addEventListener('input', () => {
+        if (remember?.checked) {
+          localStorage.setItem('wallet_adjust_body', ta.value);
+        }
+      });
+
+      btn.addEventListener('click', async () => {
+        let body;
+        try {
+          body = JSON.parse(ta.value || '{}');
+        } catch {
+          alert('Invalid JSON payload for /wallet/adjust');
+          return;
+        }
+
+        // Require amount but not userId
+        if (typeof body.amount === 'undefined' || isNaN(Number(body.amount))) {
+          alert('Payload must include a numeric "amount".');
+          return;
+        }
+
+        const { data } = await request('POST', '/wallet/adjust', body);
+
+        // Show key fields from response
+        const bits = [];
+        if (data?.message) bits.push(data.message);
+        if (data?.balance != null) bits.push('balance: ' + data.balance);
+        if (data?.amount != null) bits.push('amount: ' + data.amount);
+        if (data?.alreadyCredited != null) bits.push('alreadyCredited: ' + data.alreadyCredited);
+        if (data?.skipped != null) bits.push('skipped: ' + data.skipped);
+        if (data?.reason) bits.push('reason: ' + data.reason);
+
+        meta.textContent = bits.length ? bits.join(' • ') : 'Request sent. See full response below.';
+      });
+    })();
   </script>
 </body>
 </html>
