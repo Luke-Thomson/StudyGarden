@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import TimerService from '#services/timer_service'
 import { timerStartValidator } from '#validators/timer_start'
 import { timerStopValidator } from '#validators/timer_stop'
+import WalletService from "#services/wallet_service";
 
 export default class TimersController {
   private service = new TimerService()
@@ -41,8 +42,10 @@ export default class TimersController {
     const user = await auth.authenticate()
     const { sessionId } = await request.validateUsing(timerStopValidator)
 
+    // 1) Finalize the session (server time → COMPLETED)
     const result = await this.service.stopSession(user.id, sessionId)
 
+    // 2) Standardized error mapping (unchanged)
     if ('error' in result) {
       if (result.error === 'NOT_OWNED_OR_NOT_FOUND') {
         return response.forbidden({ message: 'Session not found or not owned by user' })
@@ -53,6 +56,13 @@ export default class TimersController {
       return response.badRequest({ message: 'Unable to stop session' })
     }
 
+    // 3) Credit coins
+    const creditInfo = await WalletService.creditForSession(result.session.id)
+
+    // 4) Fetch fresh wallet balance for the response
+    const balance = await WalletService.getBalance(user.id)
+
+    // 5) Compose response
     return response.ok({
       message: 'Session stopped successfully',
       sessionId: result.session.id,
@@ -60,6 +70,8 @@ export default class TimersController {
       startedAt: result.session.startedAt.toISO(),
       endedAt: result.session.endedAt?.toISO(),
       actualSeconds: result.actualSeconds,
+      creditInfo,                            // { skipped?: true, reason?: string } OR { alreadyCredited, balance }
+      balance                               // updated wallet balance (coins)
     })
   }
 
