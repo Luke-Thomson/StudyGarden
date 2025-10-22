@@ -200,8 +200,8 @@ export default class WalletService {
 
     // 3) Convert to minutes and apply basic rules
     const minutes = Math.floor(durationSec / 60)
-    if (minutes < 5) {
-      return { skipped: true, reason: 'Below 5-minute minimum' }
+    if (minutes < 1) {
+      return { skipped: true, reason: 'Below 1-minute minimum' }
     }
 
     // 4) Simple coin formula (1 coin per minute)
