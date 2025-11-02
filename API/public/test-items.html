@@ -89,6 +89,30 @@
     </div>
   </section>
 
+  <!-- Purchase (by ID) -->
+  <div class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <strong>Purchase (by ID)</strong>
+      <span class="pill">POST /items/:id/purchase</span>
+    </div>
+    <div class="row">
+      <input id="purchaseId" placeholder=":id" style="flex:1" />
+      <input id="purchaseQtyById" type="number" min="1" step="1" placeholder="quantity (default 1)" style="width:180px" />
+    </div>
+    <button id="btnPurchaseById" class="primary">Buy by ID</button>
+  </div>
+
+  <!-- Purchase (by Slug) -->
+  <div class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <strong>Purchase (by Slug)</strong>
+      <span class="pill">POST /items/purchase</span>
+    </div>
+    <input id="purchaseSlug" placeholder="slug (e.g. tomato)" />
+    <input id="purchaseQtyBySlug" type="number" min="1" step="1" placeholder="quantity (default 1)" />
+    <button id="btnPurchaseBySlug" class="primary">Buy by Slug</button>
+  </div>
+
   <section class="card stack">
     <div class="row" style="justify-content:space-between; align-items:center;">
       <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
@@ -166,6 +190,29 @@
     }
     request('DELETE', `/items/${id}`)
   })
+
+  // POST /items/:id/purchase
+  document.getElementById('btnPurchaseById').addEventListener('click', () => {
+    const id = document.getElementById('purchaseId').value.trim()
+    if (!id) return alert('Provide :id')
+
+    const qtyRaw = document.getElementById('purchaseQtyById').value.trim()
+    const body = {}
+    if (qtyRaw) body.quantity = Number(qtyRaw) // API validates
+    request('POST', `/items/${id}/purchase`, body)
+  })
+
+  // POST /items/purchase (by slug)
+  document.getElementById('btnPurchaseBySlug').addEventListener('click', () => {
+    const slug = document.getElementById('purchaseSlug').value.trim()
+    if (!slug) return alert('Provide slug')
+
+    const qtyRaw = document.getElementById('purchaseQtyBySlug').value.trim()
+    const body = { slug }
+    if (qtyRaw) body.quantity = Number(qtyRaw)
+    request('POST', `/items/purchase`, body)
+  })
+
 </script>
 </body>
 </html>

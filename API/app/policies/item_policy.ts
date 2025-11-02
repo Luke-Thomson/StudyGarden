@@ -47,4 +47,11 @@ export default class ItemPolicy extends BasePolicy {
   public delete(): AuthorizerResponse {
     return false
   }
+
+  /**
+   * Any authenticated user may purchase items.
+   */
+  public async purchase(user: User) {
+    return !!user // must be logged-in
+  }
 }

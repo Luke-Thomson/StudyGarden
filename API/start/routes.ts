@@ -86,6 +86,8 @@ router
   .group(() => {
     router.get('/items', [ItemsController, 'index'])
     router.get('/items/:id', [ItemsController, 'show'])
+    router.post('/items/:id/purchase', [ItemsController, 'purchaseById'])
+    router.post('/items/purchase', [ItemsController, 'purchaseBySlug'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 

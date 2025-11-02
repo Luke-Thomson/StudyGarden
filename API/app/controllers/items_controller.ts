@@ -3,6 +3,8 @@ import Item from '#models/item'
 import ItemPolicy from '#policies/item_policy'
 import { itemStoreValidator } from '#validators/item_store'
 import { itemUpdateValidator } from '#validators/item_update'
+import PurchaseService from "#services/purchase_service";
+import {itemPurchaseByIdValidator, itemPurchaseBySlugValidator} from "#validators/item_purchase";
 
 export default class ItemsController {
   async index({ bouncer }: HttpContext) {
@@ -59,5 +61,39 @@ export default class ItemsController {
     await bouncer.with(ItemPolicy).authorize('delete')
     await item.delete()
     return response.noContent()
+  }
+
+  // POST /items/:id/purchase
+  async purchaseById({ auth, params, request, response, bouncer }: HttpContext) {
+    const item = await Item.find(params.id)
+    if (!item) return response.notFound({ message: 'Item not found' })
+    await bouncer.with(ItemPolicy).authorize('purchase')
+
+    const body = await request.validateUsing(itemPurchaseByIdValidator)
+    try {
+      const result = await PurchaseService.purchaseByItemId(auth.user!.id, item.id, body.quantity ?? 1, 'PURCHASE')
+      return response.ok(result)
+    } catch (e: any) {
+      const msg = String(e?.message ?? '')
+      if (msg.toLowerCase().includes('insufficient')) return response.status(402).send({ message: 'Insufficient balance' })
+      return response.badRequest({ message: msg || 'Purchase failed' })
+    }
+  }
+
+// POST /items/purchase
+  async purchaseBySlug({ auth, request, response, bouncer }: HttpContext) {
+    const body = await request.validateUsing(itemPurchaseBySlugValidator)
+    const item = await Item.query().where('slug', body.slug).first()
+    if (!item) return response.notFound({ message: 'Item not found' })
+    await bouncer.with(ItemPolicy).authorize('purchase')
+
+    try {
+      const result = await PurchaseService.purchaseBySlug(auth.user!.id, body.slug, body.quantity ?? 1, 'PURCHASE')
+      return response.ok(result)
+    } catch (e: any) {
+      const msg = String(e?.message ?? '')
+      if (msg.toLowerCase().includes('insufficient')) return response.status(402).send({ message: 'Insufficient balance' })
+      return response.badRequest({ message: msg || 'Purchase failed' })
+    }
   }
 }
