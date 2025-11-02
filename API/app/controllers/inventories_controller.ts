@@ -10,7 +10,7 @@ export default class InventoryController {
 
   async forUser({ params }: HttpContext) {
     const userId = Number(params.id)
-    return InventoryService.listForUser(userId)
+    return await InventoryService.listForUser(userId)
   }
 
   async adjust({ auth, request, response }: HttpContext) {

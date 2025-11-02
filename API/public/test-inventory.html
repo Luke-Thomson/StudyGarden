@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Inventory</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="inventory">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Requires auth" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>My Inventory</strong>
+        <span class="pill">GET /me/inventory</span>
+      </div>
+      <button id="btnMyInventory">GET /me/inventory</button>
+      <span class="small muted">View holdings for the authenticated user.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>User Inventory (admin)</strong>
+        <span class="pill">GET /users/:id/inventory</span>
+      </div>
+      <div class="row">
+        <input id="inventoryUserId" placeholder=":id" style="flex:1" />
+        <button id="btnUserInventory">GET</button>
+      </div>
+      <span class="small muted">Requires admin role.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Adjust Inventory</strong>
+        <span class="pill">POST /inventory/adjust</span>
+      </div>
+      <textarea id="inventoryAdjustBody" rows="6" placeholder='{"userId":42,"itemId":1,"quantityChange":1}'></textarea>
+      <div class="row" style="align-items:center; gap:10px;">
+        <button id="btnInventoryAdjust" class="primary">Adjust</button>
+        <label class="small" style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="inventoryRemember" />
+          remember payload
+        </label>
+      </div>
+      <div class="small muted">Set <code class="badge">userId</code> to target someone else; omit to adjust current user.</div>
+      <div class="small" id="inventoryMeta" style="opacity:.9"></div>
+    </div>
+  </section>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request } from './test-common.js'
+
+  const STORAGE_KEY = 'inventory_adjust_body'
+
+  initLayout()
+
+  document.getElementById('btnMyInventory').addEventListener('click', () => request('GET', '/me/inventory'))
+
+  document.getElementById('btnUserInventory').addEventListener('click', () => {
+    const id = document.getElementById('inventoryUserId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('GET', `/users/${id}/inventory`)
+  })
+
+  const textarea = document.getElementById('inventoryAdjustBody')
+  const remember = document.getElementById('inventoryRemember')
+  const meta = document.getElementById('inventoryMeta')
+
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    textarea.value = saved
+    remember.checked = true
+  }
+
+  remember.addEventListener('change', () => {
+    if (remember.checked) {
+      localStorage.setItem(STORAGE_KEY, textarea.value)
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  })
+
+  textarea.addEventListener('input', () => {
+    if (remember.checked) {
+      localStorage.setItem(STORAGE_KEY, textarea.value)
+    }
+  })
+
+  document.getElementById('btnInventoryAdjust').addEventListener('click', async () => {
+    let body
+    const raw = textarea.value.trim()
+    if (raw) {
+      try {
+        body = JSON.parse(raw)
+      } catch (error) {
+        alert('Invalid JSON payload for /inventory/adjust')
+        return
+      }
+    } else {
+      alert('Provide a JSON payload with itemId and quantityChange')
+      return
+    }
+
+    if (typeof body.itemId === 'undefined' || typeof body.quantityChange === 'undefined') {
+      alert('Payload must include itemId and quantityChange')
+      return
+    }
+
+    const { data } = await request('POST', '/inventory/adjust', body)
+    const bits = []
+    if (data?.message) bits.push(data.message)
+    if (data?.itemId != null) bits.push(`itemId: ${data.itemId}`)
+    if (data?.quantity != null) bits.push(`quantity: ${data.quantity}`)
+    if (data?.quantityChange != null) bits.push(`change: ${data.quantityChange}`)
+    if (data?.metadata) bits.push('metadata updated')
+    meta.textContent = bits.join(' • ')
+  })
+</script>
+</body>
+</html>
