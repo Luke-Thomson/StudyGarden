@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Admin Utilities</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="admin">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Requires admin" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="card stack">
+    <h1>Wallet Adjustment</h1>
+    <p class="small muted">
+      Adjust a user's wallet balance. Requires admin role. Payload is editable JSON.
+    </p>
+    <textarea id="walletAdjustBody" rows="6" placeholder='{"userId":42,"amount":100}'></textarea>
+    <div class="row" style="align-items:center; gap:10px;">
+      <button id="btnWalletAdjust" class="primary">POST /wallet/adjust</button>
+      <label class="small" style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="walletRemember" />
+        remember payload
+      </label>
+    </div>
+    <div class="small" id="walletAdjustMeta" style="opacity:.9"></div>
+  </section>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request } from './test-common.js'
+
+  const STORAGE_KEY = 'wallet_adjust_body'
+
+  initLayout()
+
+  const textarea = document.getElementById('walletAdjustBody')
+  const remember = document.getElementById('walletRemember')
+  const meta = document.getElementById('walletAdjustMeta')
+
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    textarea.value = saved
+    remember.checked = true
+  } else {
+    textarea.value = JSON.stringify({ amount: 100 }, null, 2)
+  }
+
+  remember.addEventListener('change', () => {
+    if (remember.checked) {
+      localStorage.setItem(STORAGE_KEY, textarea.value)
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  })
+
+  textarea.addEventListener('input', () => {
+    if (remember.checked) {
+      localStorage.setItem(STORAGE_KEY, textarea.value)
+    }
+  })
+
+  document.getElementById('btnWalletAdjust').addEventListener('click', async () => {
+    let body
+    const raw = textarea.value.trim()
+    if (raw) {
+      try {
+        body = JSON.parse(raw)
+      } catch (error) {
+        alert('Invalid JSON payload for /wallet/adjust')
+        return
+      }
+    } else {
+      alert('Provide a JSON payload with amount')
+      return
+    }
+
+    if (typeof body.amount === 'undefined' || Number.isNaN(Number(body.amount))) {
+      alert('Payload must include a numeric "amount".')
+      return
+    }
+
+    const { data } = await request('POST', '/wallet/adjust', body)
+    const bits = []
+    if (data?.message) bits.push(data.message)
+    if (data?.balance != null) bits.push(`balance: ${data.balance}`)
+    if (data?.amount != null) bits.push(`amount: ${data.amount}`)
+    if (data?.alreadyCredited != null) bits.push(`alreadyCredited: ${data.alreadyCredited}`)
+    if (data?.skipped != null) bits.push(`skipped: ${data.skipped}`)
+    if (data?.reason) bits.push(`reason: ${data.reason}`)
+    meta.textContent = bits.length ? bits.join(' • ') : 'Request sent. See full response below.'
+  })
+</script>
+</body>
+</html>

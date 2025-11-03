@@ -3,579 +3,154 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Minimal API Tester</title>
-  <style>
-    :root { --gap: 10px; --pad: 12px; --radius: 10px; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#0b1020; color:#e8ecf1; }
-    header { padding: 16px; background:#0f172a; position: sticky; top: 0; z-index: 1; border-bottom:1px solid #1f2a44; }
-    h1 { font-size: 18px; margin:0 0 8px; }
-    .row { display:flex; gap: var(--gap); flex-wrap: wrap; }
-    .card { background:#111928; border:1px solid #1f2a44; border-radius: var(--radius); padding: var(--pad); }
-    .stack { display:flex; flex-direction: column; gap: 8px; }
-    input, select, button, textarea { background:#0b1325; color:#e8ecf1; border:1px solid #1f2a44; border-radius: 8px; padding:10px; font:inherit; }
-    input::placeholder, textarea::placeholder { color:#8aa0c5; }
-    button { cursor:pointer; }
-    button.primary { background:#2563eb; border-color:#2563eb; }
-    button.warn { background:#ef4444; border-color:#ef4444; }
-    code.badge { background:#15213a; border:1px solid #223457; padding:2px 6px; border-radius:6px; }
-    .grid { display:grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .small { font-size: 12px; opacity:.85; }
-    .muted { color:#9fb3d6; }
-    .k { color:#cbd5e1; }
-    #out { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0a0f1e; border:1px solid #1f2a44; border-radius: var(--radius); padding: var(--pad); max-height: 45vh; overflow:auto; }
-    .sep { height:1px; background:#1f2a44; margin: 12px 0; border:0; }
-    .pill { padding:4px 8px; border-radius:999px; border:1px solid #1f2a44; background:#0b1325; font-size:12px; display:inline-block; }
-    .endpoint { display:flex; align-items:center; gap:8px; }
-    .method { font-weight:700; text-transform: uppercase; }
-    .GET{color:#22d3ee}.POST{color:#4ade80}.PUT{color:#facc15}.DELETE{color:#f87171}
-    a { color:#93c5fd; }
-  </style>
+  <title>API Tester · Generic Tools</title>
+  <link rel="stylesheet" href="test-common.css" />
 </head>
-<body>
-  <header class="stack">
-    <h1>Minimal API Tester</h1>
-    <div class="row">
-      <label class="card stack" style="flex:1 1 320px">
-        <span class="small muted">API Base URL</span>
-        <input id="baseUrl" placeholder="http://localhost:3333" />
-      </label>
-      <div class="card stack" style="flex:1 1 320px">
-        <span class="small muted">Auth Token (Bearer)</span>
-        <div class="row">
-          <input id="token" placeholder="Will populate on login if response includes a token" style="flex:1" />
-          <button id="clearToken" class="warn">Logout/clear</button>
-        </div>
-        <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+<body data-page="generic">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Will populate on login if response includes a token" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
       </div>
-      <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
-        <span class="small muted">Docs</span>
-        <div class="row">
-          <button id="openSwagger">/swagger</button>
-          <button id="openDocs">/docs</button>
-        </div>
+      <div class="small muted">
+        Stored in <code class="badge">localStorage</code> as
+        <code class="badge">api_token</code>.
       </div>
     </div>
-  </header>
-
-  <main class="stack" style="padding:16px; gap:16px;">
-    <!-- Auth -->
-    <section class="grid">
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Register</strong>
-          <span class="pill">POST /register</span>
-        </div>
-        <input id="regName" placeholder="name (optional)" />
-        <input id="regEmail" placeholder="email" />
-        <input id="regPassword" placeholder="password" type="password" />
-        <button class="primary" id="btnRegister">Register</button>
-        <span class="small muted">Adjust the field names below if your API expects different keys.</span>
-      </div>
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Login</strong>
-          <span class="pill">POST /login</span>
-        </div>
-        <input id="loginEmail" placeholder="email" />
-        <input id="loginPassword" placeholder="password" type="password" />
-        <button class="primary" id="btnLogin">Login</button>
-        <span class="small muted">Saves <code class="badge">Authorization: Bearer &lt;token&gt;</code> if present in response.</span>
-      </div>
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Logout</strong>
-          <span class="pill">DELETE /logout</span>
-        </div>
-        <button id="btnLogout">Call /logout</button>
-        <span class="small muted">Also clears local token.</span>
-      </div>
-    </section>
-
-    <!-- Quick hits -->
-    <section class="grid">
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Quick: Me</strong>
-          <span class="pill">GET /me</span>
-        </div>
-        <button id="btnMe">GET /me</button>
-        <button id="btnMySubjects">GET /me/subjects</button>
-        <button id="btnMySessions">GET /me/sessions</button>
-        <button id="btnMySessionsTotal">GET /me/sessions/totals</button>
-        <button id="btnMyWallet">GET /me/wallet</button>
-        <button id="btnMyLedger">GET /me/coins/ledger</button>
-      </div>
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Quick: Users</strong>
-          <span class="pill">auth, role</span>
-        </div>
-        <div class="row">
-          <button id="btnUsers">GET /users</button>
-          <input id="userId" placeholder=":id" style="width:120px" />
-        </div>
-        <div class="row">
-          <button id="btnUserShow">GET /users/:id</button>
-          <button id="btnUserDelete" class="warn">DELETE /users/:id</button>
-        </div>
-      </div>
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Quick: Subjects</strong>
-          <span class="pill">auth</span>
-        </div>
-        <div class="row">
-          <button id="btnSubjectsIndex">GET /subjects</button>
-          <input id="subjectId" placeholder=":id" style="width:120px" />
-        </div>
-        <textarea id="subjectBody" rows="5" placeholder='JSON body for POST/PUT, e.g. {"title":"Discrete Math"}'></textarea>
-        <div class="row">
-          <button id="btnSubjectStore" class="primary">POST /subjects</button>
-          <button id="btnSubjectShow">GET /subjects/:id</button>
-          <button id="btnSubjectUpdate">PUT /subjects/:id</button>
-          <button id="btnSubjectDelete" class="warn">DELETE /subjects/:id</button>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- Timer Sessions -->
-    <section class="card stack">
-      <h2>Timer Sessions</h2>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
       <div class="row">
-        <!-- START -->
-        <div class="card stack" style="flex:1">
-          <strong>Start Timer Session</strong>
-          <label class="small">Subject</label>
-          <div class="row">
-            <select id="subjectSelect" style="flex:1; min-width: 200px">
-              <option value="">Loading subjects…</option>
-            </select>
-            <button id="refreshSubjects" title="Reload subjects">↻</button>
-          </div>
-          <label class="small">Mode</label>
-          <select id="timerMode">
-            <option value="STUDY">STUDY</option>
-            <option value="BREAK_SHORT">BREAK SHORT</option>
-            <option value="BREAK_LONG">BREAK LONG</option>
-          </select>
-          <label class="small">Duration (seconds)</label>
-          <input id="timerDuration" type="number" min="1" placeholder="e.g. 1500" />
-
-          <details>
-            <summary>Advanced JSON override (optional)</summary>
-            <textarea id="timerAdvanced" rows="5" placeholder='{"mode":"STUDY","durationSec":1500}'></textarea>
-          </details>
-
-          <button id="btnStartTimer" class="primary">POST /timer/start</button>
-          <hr class="sep" />
-          <div class="small" id="startMeta" style="opacity:.9"></div>
-        </div>
-
-        <!-- STOP -->
-        <div class="card stack" style="flex:1">
-          <strong>Stop Timer Session</strong>
-          <label class="small">sessionId</label>
-          <input id="stopSessionId" type="number" placeholder="sessionId" />
-          <button id="btnStopTimer" class="warn">POST /timer/stop</button>
-          <hr class="sep" />
-          <div class="small" id="stopMeta" style="opacity:.9"></div>
-        </div>
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- Admin -->
-    <section class="card stack">
-      <h2>Admin</h2>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
 
-      <div class="card stack">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <strong>Wallet Adjust</strong>
-          <span class="pill">POST /wallet/adjust</span>
-        </div>
+<main class="stack" style="gap:16px;">
+  <section class="grid">
+    <div class="card stack">
+      <h1>Generic Request Builder</h1>
+      <p class="small muted">
+        Use this page for ad-hoc calls. Authentication details and the base URL
+        are shared across other tester pages via
+        <code class="badge">localStorage</code>.
+      </p>
 
-        <p class="small muted">
-          Adjust a user's wallet balance. Requires admin role. Payload is editable JSON.
-        </p>
-
-        <textarea id="walletAdjustBody" rows="6" placeholder='{"userId":42,"amount":100}'></textarea>
-
-        <div class="row" style="align-items:center; gap:10px;">
-          <button id="btnWalletAdjust" class="primary">POST /wallet/adjust</button>
-          <label class="small" style="display:flex; align-items:center; gap:6px;">
-            <input type="checkbox" id="walletRemember" />
-            remember payload
-          </label>
-        </div>
-
-        <hr class="sep" />
-        <div class="small" id="walletAdjustMeta" style="opacity:.9"></div>
-      </div>
-    </section>
-
-    <!-- Generic request builder -->
-    <section class="card stack">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <strong>Generic Request</strong>
-        <span class="small muted">Use this for any route</span>
-      </div>
       <div class="row">
         <select id="method">
           <option>GET</option>
           <option>POST</option>
           <option>PUT</option>
           <option>DELETE</option>
+          <option>PATCH</option>
         </select>
         <input id="path" placeholder="/route (e.g. /users/1)" style="flex:1" />
         <button id="send">Send</button>
       </div>
-      <textarea id="body" rows="6" placeholder='Optional JSON body'></textarea>
+
+      <textarea id="body" rows="6" placeholder="Optional JSON body"></textarea>
+
       <details>
         <summary>Headers (JSON) — optional</summary>
         <textarea id="headers" rows="4" placeholder='{"X-Example":"123"}'></textarea>
       </details>
-    </section>
+    </div>
 
-    <!-- Output -->
-    <section class="card stack">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
-        <div class="row small">
-          <span id="statusBadge" class="pill">—</span>
-        </div>
+    <div class="card stack">
+      <h2>Shortcuts</h2>
+      <p class="small muted">
+        Quickly hit frequently used routes without leaving this page.
+      </p>
+      <div class="row">
+        <button id="btnPing">GET /</button>
+        <button id="btnHealth">GET /health</button>
+        <button id="btnSwagger">GET /swagger</button>
       </div>
-      <div id="out">Response will appear here…</div>
-    </section>
+    </div>
+  </section>
 
-    <p class="small muted">Tip: If your login payload/token shape is different, tweak <em>extractToken()</em> and the auth payload fields near the top of the script.</p>
-  </main>
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint">
+        <span class="method k" id="lastMethod"></span>
+        <span id="lastUrl" class="muted" style="margin-left:6px"></span>
+      </div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
 
-  <script>
-    // ===== Utilities =====
-    const $ = (id) => document.getElementById(id)
-    const state = {
-      get baseUrl(){ return localStorage.getItem('api_base') || 'http://localhost:3333' },
-      set baseUrl(v){ localStorage.setItem('api_base', v) },
-      get token(){ return localStorage.getItem('api_token') || '' },
-      set token(v){ v ? localStorage.setItem('api_token', v) : localStorage.removeItem('api_token') },
-    }
+<script type="module">
+  import { initLayout, request } from './test-common.js';
 
-    function setUIFromState(){
-      $('baseUrl').value = state.baseUrl
-      $('token').value = state.token
-    }
+  initLayout();
 
-    function setStatus(code){
-      const badge = $('statusBadge')
-      if(!code){ badge.textContent='—'; return }
-      badge.textContent = 'HTTP ' + code
-      badge.style.background = code >= 200 && code < 300 ? '#065f46' : '#7f1d1d'
-      badge.style.borderColor = code >= 200 && code < 300 ? '#065f46' : '#7f1d1d'
-    }
+  const sendBtn = document.getElementById('send');
+  const methodEl = document.getElementById('method');
+  const pathEl = document.getElementById('path');
+  const bodyEl = document.getElementById('body');
+  const headersEl = document.getElementById('headers');
 
-    function fmt(obj){
-      try { return JSON.stringify(obj, null, 2) } catch { return String(obj) }
-    }
+  async function handleSend() {
+    const method = methodEl.value.toUpperCase();
+    const path = pathEl.value.trim() || '/';
 
-    function url(path){
-      const base = state.baseUrl.replace(/\/$/, '')
-      const p = path.startsWith('/') ? path : '/' + path
-      return base + p
-    }
-
-    function show(method, fullUrl, res, data){
-      $('lastMethod').textContent = method
-      $('lastMethod').className = 'method ' + method
-      $('lastUrl').textContent = fullUrl
-      setStatus(res?.status)
-      const headers = {}
-      if (res && res.headers) { res.headers.forEach((v,k)=>headers[k]=v) }
-      $('out').textContent = fmt({
-        url: fullUrl,
-        status: res?.status,
-        headers,
-        body: data
-      })
-    }
-
-    // Try to pull token from various common response shapes
-    function extractToken(obj){
-      if (!obj || typeof obj !== 'object') return ''
-      if (obj.token) return obj.token
-      if (obj.access_token) return obj.access_token
-      if (obj.data && (obj.data.token || obj.data.access_token)) return obj.data.token || obj.data.access_token
-      if (obj.meta && obj.meta.token) return obj.meta.token
-      return ''
-    }
-
-    async function request(method, path, body=null, extraHeaders={}){
-      const fullUrl = url(path)
-      const headers = { 'Content-Type': 'application/json', ...extraHeaders }
-      if (state.token) headers['Authorization'] = 'Bearer ' + state.token
-      const res = await fetch(fullUrl, {
-        method, headers,
-        body: body ? JSON.stringify(body) : (method === 'GET' || method === 'DELETE' ? undefined : '{}'),
-      })
-      let data
-      try { data = await res.json() } catch { data = await res.text() }
-      show(method, fullUrl, res, data)
-      return { res, data }
-    }
-
-    // ===== Wire up basics =====
-    setUIFromState()
-    $('baseUrl').addEventListener('change', e=>{ state.baseUrl = e.target.value })
-    $('token').addEventListener('change', e=>{ state.token = e.target.value })
-    $('clearToken').addEventListener('click', ()=>{ state.token = ''; setUIFromState() })
-
-    $('openSwagger').addEventListener('click', ()=> window.open(url('/swagger'), '_blank'))
-    $('openDocs').addEventListener('click', ()=> window.open(url('/docs'), '_blank'))
-
-    // ===== Auth actions =====
-    $('btnRegister').addEventListener('click', async ()=>{
-      const payload = {
-        name: $('regName').value || undefined,
-        email: $('regEmail').value,
-        password: $('regPassword').value,
-      }
-      const { data } = await request('POST', '/register', payload)
-      const t = extractToken(data)
-      if (t){ state.token = t; setUIFromState() }
-    })
-
-    $('btnLogin').addEventListener('click', async ()=>{
-      const payload = {
-        email: $('loginEmail').value,
-        password: $('loginPassword').value,
-      }
-      const { data } = await request('POST', '/login', payload)
-      const t = extractToken(data)
-      if (t){ state.token = t; setUIFromState() }
-    })
-
-    $('btnLogout').addEventListener('click', async ()=>{
-      await request('DELETE', '/logout')
-      state.token = ''
-      setUIFromState()
-    })
-
-    // ===== Quick routes =====
-    $('btnMe').addEventListener('click', ()=> request('GET', '/me'))
-    $('btnMySubjects').addEventListener('click', ()=> request('GET', '/me/subjects'))
-    $('btnMySessions').addEventListener('click', ()=> request('GET', '/me/sessions'))
-    $('btnMySessionsTotal').addEventListener('click', ()=> request('GET', '/me/sessions/totals'))
-    $('btnMyWallet').addEventListener('click', ()=> request('GET', '/me/wallet'))
-    $('btnMyLedger').addEventListener('click', ()=> request('GET', '/me/coins/ledger'))
-
-    $('btnUsers').addEventListener('click', ()=> request('GET', '/users'))
-    $('btnUserShow').addEventListener('click', ()=>{
-      const id = $('userId').value.trim(); if (!id) return alert('Provide :id')
-      request('GET', `/users/${id}`)
-    })
-    $('btnUserDelete').addEventListener('click', ()=>{
-      const id = $('userId').value.trim(); if (!id) return alert('Provide :id')
-      request('DELETE', `/users/${id}`)
-    })
-
-    $('btnSubjectsIndex').addEventListener('click', ()=> request('GET', '/subjects'))
-    $('btnSubjectShow').addEventListener('click', ()=>{
-      const id = $('subjectId').value.trim(); if (!id) return alert('Provide :id')
-      request('GET', `/subjects/${id}`)
-    })
-    $('btnSubjectDelete').addEventListener('click', ()=>{
-      const id = $('subjectId').value.trim(); if (!id) return alert('Provide :id')
-      request('DELETE', `/subjects/${id}`)
-    })
-    $('btnSubjectStore').addEventListener('click', ()=>{
-      let body
-      try { body = JSON.parse($('subjectBody').value || '{}') } catch { return alert('Invalid JSON in subject body') }
-      request('POST', '/subjects', body)
-    })
-    $('btnSubjectUpdate').addEventListener('click', ()=>{
-      const id = $('subjectId').value.trim(); if (!id) return alert('Provide :id')
-      let body
-      try { body = JSON.parse($('subjectBody').value || '{}') } catch { return alert('Invalid JSON in subject body') }
-      request('PUT', `/subjects/${id}`, body)
-    })
-
-    // ===== Generic builder =====
-    $('send').addEventListener('click', async ()=>{
-      const method = $('method').value
-      const path = $('path').value || '/'
-      let body = null
-      const raw = $('body').value.trim()
-      if (raw) { try { body = JSON.parse(raw) } catch { return alert('Invalid JSON body') } }
-      let extra = {}
-      const hdr = $('headers').value.trim()
-      if (hdr) { try { extra = JSON.parse(hdr) } catch { return alert('Invalid headers JSON') } }
-      await request(method, path, body, extra)
-    })
-
-    // ===== Timer session handlers =====
-    const fmtIso = (s)=> { try { return new Date(s).toLocaleString() } catch { return s } };
-
-    $('btnStartTimer').addEventListener('click', async ()=>{
-      const sel = document.getElementById('subjectSelect');
-      const subjectId = parseInt(sel?.value, 10);
-
-      if (!subjectId) {
-        alert('Please select a subject.');
+    // Parse JSON body
+    let body = null;
+    const rawBody = bodyEl.value.trim();
+    if (rawBody) {
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        alert('Invalid JSON body');
         return;
       }
-
-      let body;
-      const adv = $('timerAdvanced').value.trim();
-      if (adv) {
-        try { body = JSON.parse(adv) } catch { alert('Invalid JSON in Advanced override'); return; }
-        // Force subjectId from dropdown to avoid mismatch
-        body.subjectId = subjectId;
-      } else {
-        body = {
-          mode: $('timerMode').value || 'STUDY',
-          durationSec: parseInt($('timerDuration').value) || 1500,
-          subjectId
-        };
-      }
-
-      // persist last chosen subject
-      localStorage.setItem('last_subjectId', String(subjectId));
-
-      const { data } = await request('POST', '/timer/start', body);
-
-      if (data && data.sessionId){
-        localStorage.setItem('last_sessionId', data.sessionId);
-        $('stopSessionId').value = data.sessionId;
-      }
-      const fmtIso = (s)=> { try { return new Date(s).toLocaleString() } catch { return s } }
-      const meta = [];
-      if (data?.sessionId) meta.push(`sessionId: ${data.sessionId}`);
-      if (data?.mode) meta.push(`mode: ${data.mode}`);
-      if (data?.serverNow) meta.push(`serverNow: ${fmtIso(data.serverNow)}`);
-      if (data?.plannedEndAt) meta.push(`plannedEndAt: ${fmtIso(data.plannedEndAt)}`);
-      if (data?.expectedDurationSec != null) meta.push(`expectedDurationSec: ${data.expectedDurationSec}s`);
-      $('startMeta').textContent = meta.join(' • ');
-    });
-
-
-    if (document.getElementById('btnStopTimer')) {
-      document.getElementById('btnStopTimer').addEventListener('click', ()=>{
-        const stopId = document.getElementById('stopSessionId');
-        const sessionId = parseInt(stopId?.value) || parseInt(localStorage.getItem('last_sessionId'));
-        if (!sessionId) { alert('Provide a sessionId'); return; }
-        request('POST', '/timer/stop', { sessionId }).then(({ data })=>{
-          const stopMeta = document.getElementById('stopMeta');
-          const bits = [];
-          if (data?.message) bits.push(data.message);
-          if (data?.sessionId) bits.push('sessionId: ' + data.sessionId);
-          if (data?.actualSeconds != null) bits.push('actualSeconds: ' + data.actualSeconds);
-          if (stopMeta) stopMeta.textContent = bits.join(' • ');
-        });
-      });
     }
 
-    // ===== Subjects dropdown helpers =====
-    function normalizeSubjectsPayload(payload) {
-      // supports: [{id,title}, ...] OR {data:[...]} OR {subjects:[...]}
-      const arr =
-        Array.isArray(payload) ? payload :
-          Array.isArray(payload?.data) ? payload.data :
-            Array.isArray(payload?.subjects) ? payload.subjects :
-              [];
-      return arr.map(s => ({
-        id: s.id ?? s.subjectId ?? s.ID ?? s.Id,
-        title: s.title ?? s.name ?? s.SubjectName ?? ('Subject ' + (s.id ?? '?')),
-      })).filter(s => s.id != null);
-    }
-
-    async function loadSubjects() {
-      const sel = document.getElementById('subjectSelect');
-      if (!sel) return;
-
-      sel.innerHTML = `<option value="">Loading subjects…</option>`;
+    // Parse custom headers
+    let headers = {};
+    const rawHeaders = headersEl.value.trim();
+    if (rawHeaders) {
       try {
-        const { data } = await request('GET', '/me/subjects');
-        const subjects = normalizeSubjectsPayload(data);
-
-        if (!subjects.length) {
-          sel.innerHTML = `<option value="">No subjects found</option>`;
-          return;
-        }
-
-        const last = localStorage.getItem('last_subjectId');
-        sel.innerHTML = `<option value="">Select a subject…</option>` +
-          subjects.map(s => {
-            const selected = String(s.id) === String(last) ? 'selected' : '';
-            return `<option value="${s.id}" ${selected}>${s.title} (id ${s.id})</option>`;
-          }).join('');
-      } catch (e) {
-        sel.innerHTML = `<option value="">Failed to load subjects</option>`;
+        headers = JSON.parse(rawHeaders);
+      } catch {
+        alert('Invalid headers JSON');
+        return;
       }
     }
 
-    // Load when the page starts (if token is set) and on demand
-    document.addEventListener('DOMContentLoaded', () => {
-      if (state.token) loadSubjects();
-    });
-    document.getElementById('refreshSubjects')?.addEventListener('click', loadSubjects);
+    // Perform request
+    await request(method, path, body, headers);
+  }
 
-    // ===== Admin: Wallet Adjust =====
-    (function initWalletAdjust() {
-      const ta = document.getElementById('walletAdjustBody');
-      const remember = document.getElementById('walletRemember');
-      const meta = document.getElementById('walletAdjustMeta');
-      const btn = document.getElementById('btnWalletAdjust');
-
-      if (!ta || !btn) return;
-
-      // Load saved payload or sensible default
-      const saved = localStorage.getItem('wallet_adjust_body');
-      ta.value = saved || JSON.stringify({ amount: 100 }, null, 2);
-      remember.checked = !!saved;
-
-      remember?.addEventListener('change', () => {
-        if (remember.checked) {
-          localStorage.setItem('wallet_adjust_body', ta.value);
-        } else {
-          localStorage.removeItem('wallet_adjust_body');
-        }
-      });
-
-      ta.addEventListener('input', () => {
-        if (remember?.checked) {
-          localStorage.setItem('wallet_adjust_body', ta.value);
-        }
-      });
-
-      btn.addEventListener('click', async () => {
-        let body;
-        try {
-          body = JSON.parse(ta.value || '{}');
-        } catch {
-          alert('Invalid JSON payload for /wallet/adjust');
-          return;
-        }
-
-        // Require amount but not userId
-        if (typeof body.amount === 'undefined' || isNaN(Number(body.amount))) {
-          alert('Payload must include a numeric "amount".');
-          return;
-        }
-
-        const { data } = await request('POST', '/wallet/adjust', body);
-
-        // Show key fields from response
-        const bits = [];
-        if (data?.message) bits.push(data.message);
-        if (data?.balance != null) bits.push('balance: ' + data.balance);
-        if (data?.amount != null) bits.push('amount: ' + data.amount);
-        if (data?.alreadyCredited != null) bits.push('alreadyCredited: ' + data.alreadyCredited);
-        if (data?.skipped != null) bits.push('skipped: ' + data.skipped);
-        if (data?.reason) bits.push('reason: ' + data.reason);
-
-        meta.textContent = bits.length ? bits.join(' • ') : 'Request sent. See full response below.';
-      });
-    })();
-  </script>
+  // Event listeners
+  sendBtn.addEventListener('click', handleSend);
+  document.getElementById('btnPing').addEventListener('click', () => request('GET', '/'));
+  document.getElementById('btnHealth').addEventListener('click', () => request('GET', '/health'));
+  document.getElementById('btnSwagger').addEventListener('click', () => request('GET', '/swagger'));
+</script>
 </body>
 </html>
+

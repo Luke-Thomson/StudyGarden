@@ -11,6 +11,10 @@ const WalletController = () => import('#controllers/wallets_controller')
 
 const TimerController      = () => import('#controllers/timers_controller')        // timer controls
 
+const ItemsController = () => import('#controllers/items_controller')     // admin manages items
+
+const InventoryController = () => import('#controllers/inventories_controller')     // user inventory management
+
 // -----------------------------
 // Auth (session/token endpoints)
 // -----------------------------
@@ -37,11 +41,22 @@ router
     // view a user's subjects as admin
     router.get('/users/:id/subjects', [SubjectsController, 'byUser'])
 
+    // view a user's inventory as admin
+    router.get('/users/:id/inventory', [InventoryController, 'forUser'])
+
     // view all subjects
     router.get('/subjects', [SubjectsController, 'index'])
 
     // add or remove coins from user
     router.post('/wallet/adjust', [WalletController, 'adjust'])
+
+    // add or remove items from user
+    router.post('/inventory/adjust', [InventoryController, 'adjust'])
+
+    // manage the item catalog
+    router.post('/items', [ItemsController, 'store'])
+    router.put('/items/:id', [ItemsController, 'update'])
+    router.delete('/items/:id', [ItemsController, 'destroy'])
   })
   .use([
     middleware.auth({ guards: ['api'] }),
@@ -60,6 +75,19 @@ router
     router.get('/me/sessions/totals',   [TimerController, 'total'])
     router.get('/me/wallet', [WalletController, 'show'])
     router.get('/me/coins/ledger', [WalletController, 'ledger'])
+    router.get('/me/inventory', [InventoryController, 'mine'])
+  })
+  .use(middleware.auth({ guards: ['api'] }))
+
+// -----------------------------
+// Item catalog (shop)
+// -----------------------------
+router
+  .group(() => {
+    router.get('/items', [ItemsController, 'index'])
+    router.get('/items/:id', [ItemsController, 'show'])
+    router.post('/items/:id/purchase', [ItemsController, 'purchaseById'])
+    router.post('/items/purchase', [ItemsController, 'purchaseBySlug'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Subjects</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="subjects">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Requires auth" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>My Subjects</strong>
+        <span class="pill">GET /me/subjects</span>
+      </div>
+      <button id="btnMySubjects">GET /me/subjects</button>
+      <span class="small muted">Owner-only subjects listing.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Admin Subjects Index</strong>
+        <span class="pill">GET /subjects</span>
+      </div>
+      <button id="btnSubjectsIndex">GET /subjects</button>
+      <span class="small muted">Requires admin role.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Subjects by User</strong>
+        <span class="pill">GET /users/:id/subjects</span>
+      </div>
+      <div class="row">
+        <input id="subjectsUserId" placeholder=":id" style="flex:1" />
+        <button id="btnSubjectsByUser">GET</button>
+      </div>
+      <span class="small muted">Admin visibility into a student's subjects.</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Create Subject</strong>
+        <span class="pill">POST /subjects</span>
+      </div>
+      <textarea id="subjectBody" rows="5" placeholder='{"title":"Discrete Math"}'></textarea>
+      <button id="btnSubjectStore" class="primary">Create</button>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Show / Update / Delete</strong>
+        <span class="pill">/subjects/:id</span>
+      </div>
+      <div class="row">
+        <input id="subjectId" placeholder=":id" style="flex:1" />
+        <button id="btnSubjectShow">GET</button>
+        <button id="btnSubjectDelete" class="warn">DELETE</button>
+      </div>
+      <textarea id="subjectUpdateBody" rows="5" placeholder='{"title":"Updated Subject"}'></textarea>
+      <button id="btnSubjectUpdate" class="primary">PUT /subjects/:id</button>
+    </div>
+  </section>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request } from './test-common.js'
+
+  initLayout()
+
+  document.getElementById('btnMySubjects').addEventListener('click', () => request('GET', '/me/subjects'))
+  document.getElementById('btnSubjectsIndex').addEventListener('click', () => request('GET', '/subjects'))
+
+  document.getElementById('btnSubjectsByUser').addEventListener('click', () => {
+    const id = document.getElementById('subjectsUserId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('GET', `/users/${id}/subjects`)
+  })
+
+  document.getElementById('btnSubjectStore').addEventListener('click', () => {
+    let body
+    const raw = document.getElementById('subjectBody').value.trim()
+    if (raw) {
+      try {
+        body = JSON.parse(raw)
+      } catch (error) {
+        alert('Invalid JSON body')
+        return
+      }
+    } else {
+      body = {}
+    }
+    request('POST', '/subjects', body)
+  })
+
+  document.getElementById('btnSubjectShow').addEventListener('click', () => {
+    const id = document.getElementById('subjectId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('GET', `/subjects/${id}`)
+  })
+
+  document.getElementById('btnSubjectDelete').addEventListener('click', () => {
+    const id = document.getElementById('subjectId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('DELETE', `/subjects/${id}`)
+  })
+
+  document.getElementById('btnSubjectUpdate').addEventListener('click', () => {
+    const id = document.getElementById('subjectId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    let body
+    const raw = document.getElementById('subjectUpdateBody').value.trim()
+    if (raw) {
+      try {
+        body = JSON.parse(raw)
+      } catch (error) {
+        alert('Invalid JSON body')
+        return
+      }
+    } else {
+      body = {}
+    }
+    request('PUT', `/subjects/${id}`, body)
+  })
+</script>
+</body>
+</html>

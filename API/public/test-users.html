@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Users</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="users">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Requires admin" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>List Users</strong>
+        <span class="pill">GET /users</span>
+      </div>
+      <button id="btnUsers">GET /users</button>
+      <span class="small muted">Requires admin role.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Show / Update / Delete</strong>
+        <span class="pill">/users/:id</span>
+      </div>
+      <div class="row">
+        <input id="userId" placeholder=":id" style="flex:1" />
+        <button id="btnUserShow">GET</button>
+        <button id="btnUserDelete" class="warn">DELETE</button>
+      </div>
+      <textarea id="userBody" rows="4" placeholder='{"role":"admin"}'></textarea>
+      <button id="btnUserUpdate" class="primary">PUT /users/:id</button>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>User Inventory (view)</strong>
+        <span class="pill">GET /users/:id/inventory</span>
+      </div>
+      <div class="row">
+        <input id="inventoryUserId" placeholder=":id" style="flex:1" />
+        <button id="btnUserInventory">GET</button>
+      </div>
+      <span class="small muted">Read-only inventory access for admins.</span>
+    </div>
+  </section>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request } from './test-common.js'
+
+  initLayout()
+
+  document.getElementById('btnUsers').addEventListener('click', () => request('GET', '/users'))
+
+  document.getElementById('btnUserShow').addEventListener('click', () => {
+    const id = document.getElementById('userId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('GET', `/users/${id}`)
+  })
+
+  document.getElementById('btnUserDelete').addEventListener('click', () => {
+    const id = document.getElementById('userId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('DELETE', `/users/${id}`)
+  })
+
+  document.getElementById('btnUserUpdate').addEventListener('click', () => {
+    const id = document.getElementById('userId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    let body
+    const raw = document.getElementById('userBody').value.trim()
+    if (raw) {
+      try {
+        body = JSON.parse(raw)
+      } catch (error) {
+        alert('Invalid JSON body')
+        return
+      }
+    } else {
+      body = {}
+    }
+    request('PUT', `/users/${id}`, body)
+  })
+
+  document.getElementById('btnUserInventory').addEventListener('click', () => {
+    const id = document.getElementById('inventoryUserId').value.trim()
+    if (!id) {
+      alert('Provide :id')
+      return
+    }
+    request('GET', `/users/${id}/inventory`)
+  })
+</script>
+</body>
+</html>

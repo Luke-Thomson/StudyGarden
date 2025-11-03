@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Timer</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="timer">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Requires auth" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="card stack">
+    <h1>Timer Sessions</h1>
+    <div class="row">
+      <div class="card stack" style="flex:1">
+        <strong>Start Timer Session</strong>
+        <label class="small">Subject</label>
+        <div class="row">
+          <select id="subjectSelect" style="flex:1; min-width: 200px">
+            <option value="">Loading subjects…</option>
+          </select>
+          <button id="refreshSubjects" title="Reload subjects">↻</button>
+        </div>
+        <label class="small">Mode</label>
+        <select id="timerMode">
+          <option value="STUDY">STUDY</option>
+          <option value="BREAK_SHORT">BREAK SHORT</option>
+          <option value="BREAK_LONG">BREAK LONG</option>
+        </select>
+        <label class="small">Duration (seconds)</label>
+        <input id="timerDuration" type="number" min="1" placeholder="e.g. 1500" />
+        <details>
+          <summary>Advanced JSON override (optional)</summary>
+          <textarea id="timerAdvanced" rows="5" placeholder='{"mode":"STUDY","durationSec":1500}'></textarea>
+        </details>
+        <button id="btnStartTimer" class="primary">POST /timer/start</button>
+        <hr class="sep" />
+        <div class="small" id="startMeta" style="opacity:.9"></div>
+      </div>
+      <div class="card stack" style="flex:1">
+        <strong>Stop Timer Session</strong>
+        <label class="small">sessionId</label>
+        <input id="stopSessionId" type="number" placeholder="sessionId" />
+        <button id="btnStopTimer" class="warn">POST /timer/stop</button>
+        <hr class="sep" />
+        <div class="small" id="stopMeta" style="opacity:.9"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request, formatIsoToLocal } from './test-common.js'
+
+  initLayout()
+
+  function normalizeSubjectsPayload(payload) {
+    if (Array.isArray(payload)) return payload
+    if (Array.isArray(payload?.data)) return payload.data
+    if (Array.isArray(payload?.subjects)) return payload.subjects
+    return []
+  }
+
+  async function loadSubjects() {
+    const select = document.getElementById('subjectSelect')
+    if (!select) return
+
+    select.innerHTML = '<option value="">Loading subjects…</option>'
+    try {
+      const { data } = await request('GET', '/me/subjects', null, {}, { silent: true })
+      const subjects = normalizeSubjectsPayload(data)
+      if (!subjects.length) {
+        select.innerHTML = '<option value="">No subjects found</option>'
+        return
+      }
+      const last = localStorage.getItem('last_subjectId')
+      select.innerHTML = '<option value="">Select a subject…</option>' +
+        subjects.map((s) => {
+          const id = s.id ?? s.subjectId ?? s.ID ?? s.Id
+          const title = s.title ?? s.name ?? s.SubjectName ?? `Subject ${id ?? '?'}`
+          const selected = String(id) === String(last) ? 'selected' : ''
+          return `<option value="${id}" ${selected}>${title} (id ${id})</option>`
+        }).join('')
+    } catch (error) {
+      console.error(error)
+      select.innerHTML = '<option value="">Failed to load subjects</option>'
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('api_token')) {
+      loadSubjects()
+    }
+    const lastSession = localStorage.getItem('last_sessionId')
+    if (lastSession) {
+      document.getElementById('stopSessionId').value = lastSession
+    }
+  })
+
+  document.getElementById('refreshSubjects').addEventListener('click', loadSubjects)
+
+  document.getElementById('btnStartTimer').addEventListener('click', async () => {
+    const select = document.getElementById('subjectSelect')
+    const subjectId = parseInt(select?.value, 10)
+    if (!subjectId) {
+      alert('Please select a subject.')
+      return
+    }
+
+    let body
+    const advanced = document.getElementById('timerAdvanced').value.trim()
+    if (advanced) {
+      try {
+        body = JSON.parse(advanced)
+      } catch (error) {
+        alert('Invalid JSON in Advanced override')
+        return
+      }
+      body.subjectId = subjectId
+    } else {
+      body = {
+        mode: document.getElementById('timerMode').value || 'STUDY',
+        durationSec: parseInt(document.getElementById('timerDuration').value, 10) || 1500,
+        subjectId,
+      }
+    }
+
+    localStorage.setItem('last_subjectId', String(subjectId))
+
+    const { data } = await request('POST', '/timer/start', body)
+    if (data?.sessionId) {
+      localStorage.setItem('last_sessionId', data.sessionId)
+      document.getElementById('stopSessionId').value = data.sessionId
+    }
+
+    const bits = []
+    if (data?.sessionId) bits.push(`sessionId: ${data.sessionId}`)
+    if (data?.mode) bits.push(`mode: ${data.mode}`)
+    if (data?.serverNow) bits.push(`serverNow: ${formatIsoToLocal(data.serverNow)}`)
+    if (data?.plannedEndAt) bits.push(`plannedEndAt: ${formatIsoToLocal(data.plannedEndAt)}`)
+    if (data?.expectedDurationSec != null) bits.push(`expectedDurationSec: ${data.expectedDurationSec}s`)
+    document.getElementById('startMeta').textContent = bits.join(' • ')
+  })
+
+  document.getElementById('btnStopTimer').addEventListener('click', () => {
+    const input = document.getElementById('stopSessionId')
+    const sessionId = parseInt(input?.value, 10) || parseInt(localStorage.getItem('last_sessionId'), 10)
+    if (!sessionId) {
+      alert('Provide a sessionId')
+      return
+    }
+    request('POST', '/timer/stop', { sessionId }).then(({ data }) => {
+      const bits = []
+      if (data?.message) bits.push(data.message)
+      if (data?.sessionId) bits.push(`sessionId: ${data.sessionId}`)
+      if (data?.actualSeconds != null) bits.push(`actualSeconds: ${data.actualSeconds}`)
+      document.getElementById('stopMeta').textContent = bits.join(' • ')
+    })
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Auth &amp; Profile</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="auth">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Will populate on login if response includes a token" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored in <code class="badge">localStorage</code> as <code class="badge">api_token</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Register</strong>
+        <span class="pill">POST /register</span>
+      </div>
+      <input id="regName" placeholder="name (optional)" />
+      <input id="regEmail" placeholder="email" />
+      <input id="regPassword" placeholder="password" type="password" />
+      <button class="primary" id="btnRegister">Register</button>
+      <span class="small muted">Adjust the field names below if your API expects different keys.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Login</strong>
+        <span class="pill">POST /login</span>
+      </div>
+      <input id="loginEmail" placeholder="email" />
+      <input id="loginPassword" placeholder="password" type="password" />
+      <button class="primary" id="btnLogin">Login</button>
+      <span class="small muted">Saves <code class="badge">Authorization: Bearer &lt;token&gt;</code> if present in response.</span>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Logout</strong>
+        <span class="pill">DELETE /logout</span>
+      </div>
+      <button id="btnLogout">Call /logout</button>
+      <span class="small muted">Also clears local token.</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Profile</strong>
+        <span class="pill">auth</span>
+      </div>
+      <button id="btnMe">GET /me</button>
+      <button id="btnMeUpdate" class="primary">PUT /me</button>
+      <textarea id="meBody" rows="4" placeholder='{"name":"Updated Name"}'></textarea>
+    </div>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>My Resources</strong>
+        <span class="pill">auth</span>
+      </div>
+      <button id="btnMySubjects">GET /me/subjects</button>
+      <button id="btnMySessions">GET /me/sessions</button>
+      <button id="btnMySessionsTotal">GET /me/sessions/totals</button>
+      <button id="btnMyWallet">GET /me/wallet</button>
+      <button id="btnMyLedger">GET /me/coins/ledger</button>
+      <button id="btnMyInventory">GET /me/inventory</button>
+    </div>
+  </section>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint"><span class="method k" id="lastMethod"></span><span id="lastUrl" class="muted" style="margin-left:6px"></span></div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request, extractToken, state } from './test-common.js'
+
+  initLayout()
+
+  document.getElementById('btnRegister').addEventListener('click', async () => {
+    const payload = {
+      name: document.getElementById('regName').value || undefined,
+      email: document.getElementById('regEmail').value,
+      password: document.getElementById('regPassword').value,
+    }
+    const { data } = await request('POST', '/register', payload)
+    const token = extractToken(data)
+    if (token) state.token = token
+  })
+
+  document.getElementById('btnLogin').addEventListener('click', async () => {
+    const payload = {
+      email: document.getElementById('loginEmail').value,
+      password: document.getElementById('loginPassword').value,
+    }
+    const { data } = await request('POST', '/login', payload)
+    const token = extractToken(data)
+    if (token) state.token = token
+  })
+
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    await request('DELETE', '/logout')
+    state.token = ''
+  })
+
+  document.getElementById('btnMe').addEventListener('click', () => request('GET', '/me'))
+
+  document.getElementById('btnMeUpdate').addEventListener('click', () => {
+    let body
+    const raw = document.getElementById('meBody').value.trim()
+    if (raw) {
+      try {
+        body = JSON.parse(raw)
+      } catch (error) {
+        alert('Invalid JSON in body')
+        return
+      }
+    } else {
+      body = {}
+    }
+    request('PUT', '/me', body)
+  })
+
+  document.getElementById('btnMySubjects').addEventListener('click', () => request('GET', '/me/subjects'))
+  document.getElementById('btnMySessions').addEventListener('click', () => request('GET', '/me/sessions'))
+  document.getElementById('btnMySessionsTotal').addEventListener('click', () => request('GET', '/me/sessions/totals'))
+  document.getElementById('btnMyWallet').addEventListener('click', () => request('GET', '/me/wallet'))
+  document.getElementById('btnMyLedger').addEventListener('click', () => request('GET', '/me/coins/ledger'))
+  document.getElementById('btnMyInventory').addEventListener('click', () => request('GET', '/me/inventory'))
+</script>
+</body>
+</html>
