@@ -2,19 +2,18 @@ import Item from '#models/item'
 import { LedgerType } from '#models/coin_ledger'
 import WalletService from '#services/wallet_service'
 import InventoryService from '#services/inventory_service'
-import { ItemMetadata } from '#models/item'
 
 type PurchaseInput = { itemId: number; quantity?: number } | { slug: string; quantity?: number }
 
 export default class PurchaseService {
-  private static async resolve(itemRef: PurchaseInput) {
-    let item: Item
-    if ('itemId' in itemRef) item = await Item.findOrFail(itemRef.itemId)
-    else item = await Item.query().where('slug', itemRef.slug).firstOrFail()
+  private static async resolve(input: PurchaseInput) {
+    const item = 'itemId' in input
+      ? await Item.findOrFail(input.itemId)
+      : await Item.query().where('slug', input.slug).firstOrFail()
 
-    const unitPrice = Number((item.metadata as ItemMetadata | null)?.repurchasePrice ?? NaN)
+    const unitPrice = Number(item.price)
     if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-      throw new Error('Item has no valid repurchasePrice')
+      throw new Error('Item has no valid price')
     }
     return { item, unitPrice }
   }

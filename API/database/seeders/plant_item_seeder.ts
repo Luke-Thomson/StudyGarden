@@ -14,7 +14,7 @@ function slugify(s: string): string {
 export default class ItemSeeder extends BaseSeeder {
   public static environment = ['development', 'testing', 'production']
 
-  public async run () {
+  public async run() {
     const plants = [
       { name: "Tomato", description: "Not pronounced like its cousin, the potato, this plant is perfect for those with a speech impediment.", pack: "Common", stages: 2, growth: 5, cpd: 2, yield: 10, price: 10, pull: 0.08 },
       { name: "Cabbage", description: "One boiled cabbage please!", pack: "Common", stages: 2, growth: 6, cpd: 2, yield: 12, price: 10, pull: 0.08 },
@@ -48,18 +48,18 @@ export default class ItemSeeder extends BaseSeeder {
       name: p.name,
       type: 'seed',
       description: p.description,
+      price: p.price, // <-- now stored in the DB column
       metadata: {
         packName: p.pack,
         stageCount: p.stages,
         growthDays: p.growth,
         coinsPerDay: p.cpd,
         coinYield: p.yield,
-        repurchasePrice: p.price,
         mysteryPackPullPct: p.pull,
       },
     }))
 
     await Item.updateOrCreateMany('slug', payloads)
-    console.log(`Seeded ${payloads.length} plants`)
+    console.log(`Seeded ${payloads.length} plants with price column.`)
   }
 }

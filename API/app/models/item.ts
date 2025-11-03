@@ -49,6 +49,9 @@ export default class Item extends BaseModel {
   declare type: string
 
   @column()
+  declare price: number
+
+  @column()
   declare description: string | null
 
   @column({
