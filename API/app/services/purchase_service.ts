@@ -2,6 +2,7 @@ import Item from '#models/item'
 import { LedgerType } from '#models/coin_ledger'
 import WalletService from '#services/wallet_service'
 import InventoryService from '#services/inventory_service'
+import db from "@adonisjs/lucid/services/db";
 
 type PurchaseInput = { itemId: number; quantity?: number } | { slug: string; quantity?: number }
 
@@ -24,12 +25,13 @@ export default class PurchaseService {
     const { item, unitPrice } = await this.resolve(input)
     const totalPrice = unitPrice * qty
 
-    // 1) Add inventory
-    const inv = await InventoryService.adjustQuantity(userId, item.id, qty) // no metadata
+    return db.transaction(async (trx) => {
+      // 1) Add inventory
+      const inv = await InventoryService.adjustQuantity(userId, item.id, qty, undefined, trx) // no metadata
 
-    // 2) Debit wallet (no refId, avoids UNIQUE(user_id,type,ref_id) collisions)
-    try {
-      const { balance } = await WalletService.debit(userId, totalPrice, ledgerType)
+      // 2) Debit wallet (no refId, avoids UNIQUE(user_id,type,ref_id) collisions)
+      const { balance } = await WalletService.debit(userId, totalPrice, ledgerType, undefined, trx)
+
       return {
         itemId: item.id,
         quantity: qty,
@@ -38,13 +40,7 @@ export default class PurchaseService {
         balance,
         inventoryQuantity: inv.quantity,
       }
-    } catch (e) {
-      // compensate inventory on debit failure
-      try {
-        await InventoryService.adjustQuantity(userId, item.id, -qty)
-      } catch {}
-      throw e
-    }
+    })
   }
 
   static purchaseByItemId(

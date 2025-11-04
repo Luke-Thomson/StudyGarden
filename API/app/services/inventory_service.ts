@@ -1,6 +1,7 @@
 import db from '@adonisjs/lucid/services/db'
 import Item, { type ItemMetadata } from '#models/item'
 import UserInventoryItem from '#models/user_inventory_item'
+import {QueryClientContract, TransactionClientContract} from "@adonisjs/lucid/types/database";
 
 export default class InventoryService {
   static async listForUser(userId: number) {
@@ -11,13 +12,14 @@ export default class InventoryService {
     userId: number,
     itemId: number,
     quantityChange: number,
-    metadata?: ItemMetadata | null
+    metadata?: ItemMetadata | null,
+    client?: QueryClientContract
   ) {
     if (quantityChange === 0) {
       throw new Error('quantityChange must be non-zero')
     }
 
-    return db.transaction(async (trx) => {
+    const run = async (trx: QueryClientContract) => {
       await Item.query({ client: trx }).where('id', itemId).firstOrFail()
 
       const existing = await UserInventoryItem.query({ client: trx })
@@ -38,7 +40,11 @@ export default class InventoryService {
         }
 
         if (updatedQuantity === 0) {
-          await existing.useTransaction(trx).delete()
+          if ((trx as TransactionClientContract).isTransaction) {
+            await existing.useTransaction(trx as TransactionClientContract).delete()
+          } else {
+            await existing.delete()
+          }
           return {
             userId,
             itemId,
@@ -47,7 +53,11 @@ export default class InventoryService {
           }
         }
 
-        await existing.useTransaction(trx).save()
+        if ((trx as TransactionClientContract).isTransaction) {
+          await existing.useTransaction(trx as TransactionClientContract).save()
+        } else {
+          await existing.save()
+        }
         return {
           userId,
           itemId,
@@ -65,7 +75,11 @@ export default class InventoryService {
       inventoryItem.itemId = itemId
       inventoryItem.quantity = quantityChange
       inventoryItem.metadata = metadata ?? null
-      await inventoryItem.useTransaction(trx).save()
+      if ((trx as TransactionClientContract).isTransaction) {
+        await inventoryItem.useTransaction(trx as TransactionClientContract).save()
+      } else {
+        await inventoryItem.save()
+      }
 
       return {
         userId,
@@ -73,6 +87,12 @@ export default class InventoryService {
         quantity: inventoryItem.quantity,
         metadata: inventoryItem.metadata,
       }
-    })
+    }
+
+    if (client) {
+      return run(client)
+    }
+
+    return db.transaction(async (trx) => run(trx))
   }
 }
