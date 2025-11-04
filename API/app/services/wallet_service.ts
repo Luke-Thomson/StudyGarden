@@ -78,7 +78,7 @@ export default class WalletService {
       throw new Error('credit() amount must be > 0')
     }
 
-    return await db.transaction(async (trx) => {
+    return db.transaction(async (trx) => {
       // ----- 1) Idempotency: refuse duplicate credit for same (user, type, refId) -----
       if (refId) {
         const duplicate = await CoinLedger.query({ client: trx })
@@ -98,10 +98,7 @@ export default class WalletService {
 
       // (Optional) lock the wallet row on PG/MySQL so concurrent writers queue.
       // On SQLite this is a no-op; the atomic increment below still protects you.
-      await UserWallet.query({ client: trx })
-        .where('user_id', userId)
-        .forUpdate()
-        .first()
+      await UserWallet.query({ client: trx }).where('user_id', userId).forUpdate().first()
 
       // ----- 3) Append an auditable, positive ledger entry -----
       const ledger = new CoinLedger()
@@ -138,7 +135,7 @@ export default class WalletService {
       throw new Error('debit() amount must be > 0')
     }
 
-    return await db.transaction(async (trx) => {
+    return db.transaction(async (trx) => {
       // ----- 1) Ensure wallet exists -----
       await this.ensureWallet(userId, trx)
 
@@ -213,7 +210,7 @@ export default class WalletService {
 
     return {
       ...creditResult,
-      coins
+      coins,
     }
   }
 }

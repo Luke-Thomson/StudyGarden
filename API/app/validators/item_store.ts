@@ -1,9 +1,6 @@
 import vine from '@vinejs/vine'
 
-const metadataSchema = vine
-  .object({})
-  .allowUnknownProperties()
-  .optional()
+const metadataSchema = vine.object({}).allowUnknownProperties().optional()
 
 export const itemStoreValidator = vine.compile(
   vine.object({

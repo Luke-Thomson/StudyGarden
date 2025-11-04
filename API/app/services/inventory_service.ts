@@ -4,10 +4,7 @@ import UserInventoryItem from '#models/user_inventory_item'
 
 export default class InventoryService {
   static async listForUser(userId: number) {
-    return UserInventoryItem.query()
-      .where('user_id', userId)
-      .preload('item')
-      .orderBy('id', 'asc');
+    return UserInventoryItem.query().where('user_id', userId).preload('item').orderBy('id', 'asc')
   }
 
   static async adjustQuantity(
@@ -20,7 +17,7 @@ export default class InventoryService {
       throw new Error('quantityChange must be non-zero')
     }
 
-    return await db.transaction(async (trx) => {
+    return db.transaction(async (trx) => {
       await Item.query({ client: trx }).where('id', itemId).firstOrFail()
 
       const existing = await UserInventoryItem.query({ client: trx })

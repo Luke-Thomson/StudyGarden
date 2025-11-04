@@ -8,7 +8,7 @@ export default class UsersController {
    * GET /users
    * List all users (admin only)
    */
-  public async index({ }: HttpContext) {
+  public async index(_ctx: HttpContext) {
     return User.query()
   }
 
@@ -53,4 +53,3 @@ export default class UsersController {
     return response.noContent()
   }
 }
-

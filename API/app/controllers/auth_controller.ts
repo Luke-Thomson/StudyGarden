@@ -36,4 +36,3 @@ export default class AuthController {
     return response.noContent()
   }
 }
-
