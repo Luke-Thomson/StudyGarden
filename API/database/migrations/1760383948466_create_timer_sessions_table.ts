@@ -17,10 +17,7 @@ export default class extends BaseSchema {
 
       table.enum('mode', ['STUDY', 'BREAK_SHORT', 'BREAK_LONG']).notNullable()
       table.integer('expected_duration_sec').notNullable()
-      table
-        .enum('status', ['RUNNING', 'COMPLETED', 'ABANDONED'])
-        .notNullable()
-        .defaultTo('RUNNING')
+      table.enum('status', ['RUNNING', 'COMPLETED', 'ABANDONED']).notNullable().defaultTo('RUNNING')
 
       table.timestamp('started_at').notNullable()
       table.timestamp('ended_at')

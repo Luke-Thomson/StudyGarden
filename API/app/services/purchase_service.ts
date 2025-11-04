@@ -7,9 +7,10 @@ type PurchaseInput = { itemId: number; quantity?: number } | { slug: string; qua
 
 export default class PurchaseService {
   private static async resolve(input: PurchaseInput) {
-    const item = 'itemId' in input
-      ? await Item.findOrFail(input.itemId)
-      : await Item.query().where('slug', input.slug).firstOrFail()
+    const item =
+      'itemId' in input
+        ? await Item.findOrFail(input.itemId)
+        : await Item.query().where('slug', input.slug).firstOrFail()
 
     const unitPrice = Number(item.price)
     if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
@@ -29,20 +30,38 @@ export default class PurchaseService {
     // 2) Debit wallet (no refId, avoids UNIQUE(user_id,type,ref_id) collisions)
     try {
       const { balance } = await WalletService.debit(userId, totalPrice, ledgerType)
-      return { itemId: item.id, quantity: qty, unitPrice, totalPrice, balance, inventoryQuantity: inv.quantity }
+      return {
+        itemId: item.id,
+        quantity: qty,
+        unitPrice,
+        totalPrice,
+        balance,
+        inventoryQuantity: inv.quantity,
+      }
     } catch (e) {
       // compensate inventory on debit failure
-      try { await InventoryService.adjustQuantity(userId, item.id, -qty) } catch {}
+      try {
+        await InventoryService.adjustQuantity(userId, item.id, -qty)
+      } catch {}
       throw e
     }
   }
 
-  static purchaseByItemId(userId: number, itemId: number, quantity = 1, ledgerType: LedgerType = 'PURCHASE') {
+  static purchaseByItemId(
+    userId: number,
+    itemId: number,
+    quantity = 1,
+    ledgerType: LedgerType = 'PURCHASE'
+  ) {
     return this.purchase(userId, { itemId, quantity }, ledgerType)
   }
 
-  static purchaseBySlug(userId: number, slug: string, quantity = 1, ledgerType: LedgerType = 'PURCHASE') {
+  static purchaseBySlug(
+    userId: number,
+    slug: string,
+    quantity = 1,
+    ledgerType: LedgerType = 'PURCHASE'
+  ) {
     return this.purchase(userId, { slug, quantity }, ledgerType)
   }
 }
-
