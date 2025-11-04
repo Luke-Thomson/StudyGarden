@@ -122,6 +122,16 @@
     <button id="btnPurchaseBySlug" class="primary">Buy by Slug</button>
   </div>
 
+  <!-- Open pack (by Slug) -->
+  <div class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <strong>Open Pack</strong>
+      <span class="pill">POST /packs/:slug/open</span>
+    </div>
+    <input id="openPackSlug" placeholder="common-pack" />
+    <button id="btnOpenPackParam" class="primary">Open</button>
+  </div>
+
   <!-- Response Viewer -->
   <section class="card stack">
     <div class="row" style="justify-content:space-between; align-items:center;">
@@ -202,6 +212,11 @@
     const qty = document.getElementById('purchaseQtyBySlug').value.trim()
     const body = { slug, ...(qty ? { quantity: Number(qty) } : {}) }
     request('POST', '/items/purchase', body)
+  })
+
+  document.getElementById('btnOpenPackParam').addEventListener('click', () => {
+    const slug = document.getElementById('openPackSlug').value.trim() || 'common-pack'
+    request('POST', `/packs/${slug}/open`)
   })
 </script>
 </body>

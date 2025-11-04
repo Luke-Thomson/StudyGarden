@@ -88,6 +88,7 @@ router
     router.get('/items/:id', [ItemsController, 'show'])
     router.post('/items/:id/purchase', [ItemsController, 'purchaseById'])
     router.post('/items/purchase', [ItemsController, 'purchaseBySlug'])
+    router.post('/packs/:slug/open', [ItemsController, 'openParam'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 
