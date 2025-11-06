@@ -11,11 +11,14 @@ export default class TimerService {
    * Start a session (auto-abandon stale RUNNING one).
    * Enforces: subjectId required + owned for STUDY mode.
    */
-  public async startSession(userId: number, args: {
-    mode?: TimerMode,
-    durationSec: number,
-    subjectId?: number
-  }) {
+  public async startSession(
+    userId: number,
+    args: {
+      mode?: TimerMode
+      durationSec: number
+      subjectId?: number
+    }
+  ) {
     const mode: TimerMode = args.mode ?? 'STUDY'
 
     // For STUDY, subjectId is required & must belong to user
@@ -24,8 +27,7 @@ export default class TimerService {
       if (!args.subjectId || args.subjectId < 1) {
         return { error: 'SUBJECT_REQUIRED' } as const
       }
-      const subject = await Subject
-        .query()
+      const subject = await Subject.query()
         .where('id', args.subjectId)
         .where('userId', userId)
         .first()

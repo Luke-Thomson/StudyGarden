@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import TimerService from '#services/timer_service'
 import { timerStartValidator } from '#validators/timer_start'
 import { timerStopValidator } from '#validators/timer_stop'
-import WalletService from "#services/wallet_service";
+import WalletService from '#services/wallet_service'
 
 export default class TimersController {
   private service = new TimerService()
@@ -22,7 +22,10 @@ export default class TimersController {
         return response.forbidden({ message: 'Subject not found or not owned by user' })
       }
       if (result.error === 'ALREADY_RUNNING') {
-        return response.badRequest({ message: 'A session is already running', sessionId: result.sessionId })
+        return response.badRequest({
+          message: 'A session is already running',
+          sessionId: result.sessionId,
+        })
       }
       return response.badRequest({ message: 'Unable to start session' })
     }
@@ -70,8 +73,8 @@ export default class TimersController {
       startedAt: result.session.startedAt.toISO(),
       endedAt: result.session.endedAt?.toISO(),
       actualSeconds: result.actualSeconds,
-      creditInfo,                            // { skipped?: true, reason?: string } OR { alreadyCredited, balance }
-      balance                               // updated wallet balance (coins)
+      creditInfo, // { skipped?: true, reason?: string } OR { alreadyCredited, balance }
+      balance, // updated wallet balance (coins)
     })
   }
 
@@ -87,4 +90,3 @@ export default class TimersController {
     return this.service.myTotal(user.id)
   }
 }
-

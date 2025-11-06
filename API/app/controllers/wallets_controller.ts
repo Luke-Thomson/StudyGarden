@@ -3,7 +3,6 @@ import WalletService from '#services/wallet_service'
 import CoinLedger from '#models/coin_ledger'
 import { walletAdjustValidator } from '#validators/wallet_adjust'
 
-
 export default class WalletsController {
   /**
    * GET /me/wallet
@@ -21,8 +20,7 @@ export default class WalletsController {
   async ledger({ auth }: HttpContext) {
     const user = auth.user!
 
-    const rows = await CoinLedger.query()
-      .where('user_id', user.id)
+    const rows = await CoinLedger.query().where('user_id', user.id)
 
     return rows
   }

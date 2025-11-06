@@ -20,5 +20,5 @@ import User from '#models/user'
  * scratch
  */
 export const adminPolicy = Bouncer.ability((user: User) => {
-  return user.role === 'admin';
+  return user.role === 'admin'
 })

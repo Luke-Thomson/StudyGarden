@@ -1,33 +1,27 @@
-// for AdonisJS v6
-import path from "node:path";
-import url from "node:url";
-// ---
+import path from 'node:path'
+import url from 'node:url'
+const configDir = path.dirname(url.fileURLToPath(import.meta.url))
 
 export default {
-  // path: __dirname + "/../", for AdonisJS v5
-  path: path.dirname(url.fileURLToPath(import.meta.url)) + "/../", // for AdonisJS v6
-  title: "Foo", // use info instead
-  version: "1.0.0", // use info instead
-  description: "", // use info instead
+  path: path.join(configDir, '..'),
   tagIndex: 1,
-  productionEnv: "production", // optional
+  productionEnv: 'production',
   info: {
-    title: "StudySow",
-    version: "1.0.0",
-    description: "",
+    title: 'StudySow',
+    version: '1.0.0',
+    description: '',
   },
   snakeCase: true,
-
-  debug: true, // set to true, to get some useful debug output
-  ignore: ["/swagger", "/docs"],
-  preferredPutPatch: "PUT", // if PUT/PATCH are provided for the same route, prefer PUT
+  debug: true,
+  ignore: ['/swagger', '/docs'],
+  preferredPutPatch: 'PUT',
   common: {
-    parameters: {}, // OpenAPI conform parameters that are commonly used
-    headers: {}, // OpenAPI conform headers that are commonly used
+    parameters: {},
+    headers: {},
   },
-  securitySchemes: {}, // optional
-  authMiddlewares: ["auth", "auth:api"], // optional
-  defaultSecurityScheme: "BearerAuth", // optional
-  persistAuthorization: true, // persist authorization between reloads on the swagger page
-  showFullPath: false, // the path displayed after endpoint summary
-};
+  securitySchemes: {},
+  authMiddlewares: ['auth', 'auth:api'],
+  defaultSecurityScheme: 'BearerAuth',
+  persistAuthorization: true,
+  showFullPath: false,
+}

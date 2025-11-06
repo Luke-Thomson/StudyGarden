@@ -7,52 +7,31 @@ import type { QueryClientContract, TransactionClientContract } from '@adonisjs/l
 /**
  * WalletService
  *
- * Responsibilities:
- * - Ensure each user has a wallet row.
- * - Credit/debit coin balances atomically.
- * - Append every change to an auditable ledger.
- * - Prevent duplicate credits via (type, refId) idempotency.
- *
- * Notes:
- * - All multi-write operations run inside a DB transaction.
- * - Balance changes use single-statement increment/decrement to avoid races.
- * - `.forUpdate()` provides an extra safety net on PG/MySQL (ignored on SQLite).
- * */
+ * Handles:
+ * - Creating and maintaining user wallets
+ * - Atomic credit/debit operations
+ * - Auditable ledger entries
+ * - Idempotent crediting via (type, refId)
+ */
 export default class WalletService {
-  /**
-   * Ensure there is a wallet row for a given user.
-   * Safe to call repeatedly; creates the row only if missing.
-   *
-   * @param userId - The user owning the wallet
-   * @param client - Optional query/transaction client (pass `trx` inside transactions)
-   */
+  /** Ensure a wallet exists for the given user (idempotent). */
   static async ensureWallet(userId: number, client?: QueryClientContract) {
-    // Query using the provided client (transaction) when present
-    const existing = await UserWallet.query(client ? { client } : {})
-      .where('user_id', userId)
-      .first()
-
+    const query = UserWallet.query(client ? { client } : {})
+    const existing = await query.where('user_id', userId).first()
     if (existing) return
 
     const wallet = new UserWallet()
     wallet.userId = userId
     wallet.balanceCoins = 0
 
-    // If we’re inside a transaction, bind the save to that trx
-    if (client && (client as TransactionClientContract).isTransaction) {
-      await wallet.useTransaction(client as TransactionClientContract).save()
-    } else {
-      await wallet.save()
-    }
+    const trx = (client as TransactionClientContract)?.isTransaction
+      ? (client as TransactionClientContract)
+      : undefined
+
+    trx ? await wallet.useTransaction(trx).save() : await wallet.save()
   }
 
-  /**
-   * Get the current coin balance for a user.
-   *
-   * @param userId - The user owning the wallet
-   * @param client - Optional query/transaction client
-   * @returns current balance (number)
-   */
+  /** Get the current wallet balance for a user. */
   static async getBalance(userId: number, client?: QueryClientContract) {
     const wallet = await UserWallet.query(client ? { client } : {})
       .where('user_id', userId)
@@ -61,30 +40,47 @@ export default class WalletService {
     return Number(wallet?.balanceCoins ?? 0)
   }
 
-  /**
-   * Credit coins to a user's wallet (e.g., after a completed study session).
-   * - Idempotent when `refId` is provided: if a matching ledger entry exists,
-   *   no new credit is applied.
-   * - Appends a positive ledger row and atomically increments the balance.
-   *
-   * @param userId - Wallet owner
-   * @param amount - Number of coins to add (must be > 0)
-   * @param type   - Ledger type (e.g., 'SESSION_CREDIT')
-   * @param refId  - Optional external reference (e.g., timer_session.id)
-   * @returns { alreadyCredited: boolean; balance: number }
-   */
-  static async credit(userId: number, amount: number, type: LedgerType, refId?: number) {
-    if (amount <= 0) {
-      throw new Error('credit() amount must be > 0')
-    }
+  /** Helper to append a ledger entry within a transaction. */
+  private static async appendLedger(
+    trx: TransactionClientContract,
+    userId: number,
+    amount: number,
+    type: LedgerType,
+    refId?: number
+  ) {
+    const ledger = new CoinLedger()
+    ledger.userId = userId
+    ledger.amount = amount
+    ledger.type = type
+    ledger.refId = refId ?? null
+    await ledger.useTransaction(trx).save()
+  }
 
-    return await db.transaction(async (trx) => {
-      // ----- 1) Idempotency: refuse duplicate credit for same (user, type, refId) -----
+  /** Helper to increment/decrement wallet balance atomically. */
+  private static async updateBalance(
+    trx: QueryClientContract,
+    userId: number,
+    delta: number
+  ) {
+    const op = delta > 0 ? 'increment' : 'decrement'
+    await (UserWallet.query({ client: trx }) as any)
+      .where('user_id', userId)[op]('balance_coins', Math.abs(delta))
+  }
+
+  /** Credit coins to a user's wallet (idempotent via refId). */
+  static async credit(
+    userId: number,
+    amount: number,
+    type: LedgerType,
+    refId?: number
+  ) {
+    if (amount <= 0) throw new Error('credit() amount must be > 0')
+
+    return db.transaction(async (trx) => {
+      // 1) Idempotency check
       if (refId) {
         const duplicate = await CoinLedger.query({ client: trx })
-          .where('user_id', userId)
-          .andWhere('type', type)
-          .andWhere('ref_id', refId)
+          .where({ user_id: userId, type, ref_id: refId })
           .first()
 
         if (duplicate) {
@@ -93,127 +89,73 @@ export default class WalletService {
         }
       }
 
-      // ----- 2) Ensure wallet row exists (safe no-op if it already does) -----
+      // 2) Ensure wallet and lock row
       await this.ensureWallet(userId, trx)
+      await UserWallet.query({ client: trx }).where('user_id', userId).forUpdate().first()
 
-      // (Optional) lock the wallet row on PG/MySQL so concurrent writers queue.
-      // On SQLite this is a no-op; the atomic increment below still protects you.
-      await UserWallet.query({ client: trx })
-        .where('user_id', userId)
-        .forUpdate()
-        .first()
+      // 3) Append ledger & increment balance
+      await this.appendLedger(trx, userId, amount, type, refId)
+      await this.updateBalance(trx, userId, amount)
 
-      // ----- 3) Append an auditable, positive ledger entry -----
-      const ledger = new CoinLedger()
-      ledger.userId = userId
-      ledger.amount = amount // positive = credit
-      ledger.type = type
-      ledger.refId = refId ?? null
-      await ledger.useTransaction(trx).save()
-
-      // ----- 4) Atomically increment the wallet balance -----
-      await UserWallet.query({ client: trx })
-        .where('user_id', userId)
-        .increment('balance_coins', amount)
-
-      // ----- 5) Return the fresh balance -----
+      // 4) Return updated balance
       const balance = await this.getBalance(userId, trx)
       return { alreadyCredited: false as const, balance }
     })
   }
 
-  /**
-   * Debit coins from a user's wallet (e.g., on purchase).
-   * - Verifies sufficient funds inside the same transaction.
-   * - Appends a negative ledger entry and atomically decrements the balance.
-   *
-   * @param userId - Wallet owner
-   * @param amount - Number of coins to subtract (must be > 0)
-   * @param type   - Ledger type (e.g., 'PURCHASE')
-   * @param refId  - Optional external reference (e.g., seed_type.id)
-   * @returns { balance: number }
-   */
-  static async debit(userId: number, amount: number, type: LedgerType, refId?: number) {
-    if (amount <= 0) {
-      throw new Error('debit() amount must be > 0')
-    }
+  /** Debit coins from a user's wallet (checks balance atomically). */
+  static async debit(
+    userId: number,
+    amount: number,
+    type: LedgerType,
+    refId?: number,
+    client?: QueryClientContract
+  ) {
+    if (amount <= 0) throw new Error('debit() amount must be > 0')
 
-    return await db.transaction(async (trx) => {
-      // ----- 1) Ensure wallet exists -----
+    const run = async (trx: TransactionClientContract) => {
       await this.ensureWallet(userId, trx)
 
-      // ----- 2) Lock & read current balance (FOR UPDATE on PG/MySQL) -----
       const wallet = await UserWallet.query({ client: trx })
         .where('user_id', userId)
         .forUpdate()
         .firstOrFail()
 
-      if (Number(wallet.balanceCoins) < amount) {
-        throw new Error('Insufficient balance')
-      }
+      if (Number(wallet.balanceCoins) < amount) throw new Error('Insufficient balance')
 
-      // ----- 3) Append an auditable, negative ledger entry -----
-      const ledger = new CoinLedger()
-      ledger.userId = userId
-      ledger.amount = -amount // negative = debit
-      ledger.type = type
-      ledger.refId = refId ?? null
-      await ledger.useTransaction(trx).save()
+      await this.appendLedger(trx, userId, -amount, type, refId)
+      await this.updateBalance(trx, userId, -amount)
 
-      // ----- 4) Atomically decrement the wallet balance -----
-      await UserWallet.query({ client: trx })
-        .where('user_id', userId)
-        .decrement('balance_coins', amount)
-
-      // ----- 5) Return the fresh balance -----
       const balance = await this.getBalance(userId, trx)
       return { balance }
-    })
+    }
+
+    return client ? run(client as TransactionClientContract) : db.transaction(run)
   }
 
-  /**
-   * Credit coins for a completed study session.
-   *
-   * - Uses TimerSession.startedAt and TimerSession.endedAt to compute real duration.
-   * - Skips sessions under 5 minutes (to discourage micro farming).
-   * - Idempotent: won't double-credit the same session twice.
-   */
+  /** Credit coins for a completed TimerSession. (idempotent) */
   static async creditForSession(sessionId: number) {
-    // 1) Load the completed session
     const session = await TimerSession.findOrFail(sessionId)
-
-    const userId = session.userId
+    const { userId } = session
     const status = (session as any).status ?? 'COMPLETED'
-    if (status !== 'COMPLETED') {
+
+    if (status !== 'COMPLETED')
       return { skipped: true, reason: 'Session not completed' }
-    }
 
-    // 2) Determine actual duration (server-trusted)
-    const startedAt = (session as any).startedAt ? new Date((session as any).startedAt) : null
-    const endedAt = (session as any).endedAt ? new Date((session as any).endedAt) : null
-    let durationSec = Number((session as any).durationSec ?? 0)
+    const startedAt = session.startedAt?.toJSDate() ?? null
+    const endedAt = session.endedAt?.toJSDate() ?? null
+    const durationSec =
+      startedAt && endedAt
+        ? Math.max(0, Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000))
+        : Number((session as any).durationSec ?? 0)
 
-    if (startedAt && endedAt) {
-      const diff = Math.max(0, Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000))
-      durationSec = diff || durationSec
-    }
-
-    // 3) Convert to minutes and apply basic rules
     const minutes = Math.floor(durationSec / 60)
-    if (minutes < 1) {
+    if (minutes < 1)
       return { skipped: true, reason: 'Below 1-minute minimum' }
-    }
 
-    // 4) Simple coin formula (1 coin per minute)
-    const baseRate = 1
-    const coins = Math.max(0, Math.floor(minutes * baseRate))
-
-    // 5) Credit and include coin count in return
+    const coins = Math.floor(minutes * 1) // 1 coin per minute
     const creditResult = await this.credit(userId, coins, 'SESSION_CREDIT', sessionId)
 
-    return {
-      ...creditResult,
-      coins
-    }
+    return { ...creditResult, coins }
   }
 }

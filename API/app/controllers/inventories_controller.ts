@@ -15,9 +15,8 @@ export default class InventoryController {
 
   async adjust({ auth, request, response }: HttpContext) {
     const admin = await auth.authenticate()
-    const { userId, itemId, quantityChange, metadata } = await request.validateUsing(
-      inventoryAdjustValidator
-    )
+    const { userId, itemId, quantityChange, metadata } =
+      await request.validateUsing(inventoryAdjustValidator)
 
     const targetUserId = userId ?? admin.id
 

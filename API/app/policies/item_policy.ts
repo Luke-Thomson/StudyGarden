@@ -2,6 +2,7 @@ import User from '#models/user'
 import Item from '#models/item'
 import { BasePolicy } from '@adonisjs/bouncer'
 import type { AuthorizerResponse } from '@adonisjs/bouncer/types'
+import UserSeedUnlock from "#models/user_seed_unlock";
 
 export default class ItemPolicy extends BasePolicy {
   /**
@@ -49,9 +50,14 @@ export default class ItemPolicy extends BasePolicy {
   }
 
   /**
-   * Any authenticated user may purchase items.
+   * Any authenticated user may purchase items and unlocked seeds.
    */
-  public async purchase(user: User) {
-    return !!user // must be logged-in
+  public async purchase(user: User, item: Item) {
+    if (item.type !== 'seed') return !!user  // packs, tools, etc.
+    const row = await UserSeedUnlock.query()
+      .where('user_id', user.id)
+      .andWhere('seed_item_id', item.id)
+      .first()
+    return !!row
   }
 }

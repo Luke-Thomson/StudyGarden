@@ -1,7 +1,6 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 
-
 export type LedgerType = 'SESSION_CREDIT' | 'PURCHASE' | 'ADJUSTMENT' | 'REFUND'
 
 export default class CoinLedger extends BaseModel {
