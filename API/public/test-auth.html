@@ -115,11 +115,13 @@
   initLayout()
 
   document.getElementById('btnRegister').addEventListener('click', async () => {
-    const payload = {
-      name: document.getElementById('regName').value || undefined,
+    const name = (document.getElementById('regName').value || '').trim() || undefined
+      const payload = {
+      // send both keys to be compatible with either server expectation
+      fullName: name,
+      name,
       email: document.getElementById('regEmail').value,
-      password: document.getElementById('regPassword').value,
-    }
+      password: document.getElementById('regPassword').value,}
     const { data } = await request('POST', '/register', payload)
     const token = extractToken(data)
     if (token) state.token = token
