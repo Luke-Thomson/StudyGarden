@@ -39,8 +39,8 @@ const Navbar: React.FC = () => {
       </div>
 
       <div className="right-section">
-        <div className="piggy-bank" title="Coins">
-          <img src="/icons/piggy.svg" className="piggy-icon" alt="" />
+        <div className="piggy-bank" title="Coins Icon">
+          <img src="/piggybank.png" className="piggy-icon" alt="" />
           <span className="coin-count">0</span>
         </div>
         <button className="profile-btn">Sign In</button>
