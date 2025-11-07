@@ -1,7 +1,0 @@
-// src/debug.ts
-import { debuglog } from "node:util";
-var debug_default = debuglog("japa:plugin-adonisjs");
-
-export {
-  debug_default
-};
