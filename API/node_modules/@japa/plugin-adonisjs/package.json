@@ -1,0 +1,139 @@
+{
+  "name": "@japa/plugin-adonisjs",
+  "version": "4.0.0",
+  "description": "A bridge between AdonisJS and Japa",
+  "main": "build/index.js",
+  "files": [
+    "build",
+    "!build/bin",
+    "!build/tests",
+    "!build/tests_helpers"
+  ],
+  "exports": {
+    ".": "./build/index.js"
+  },
+  "engines": {
+    "node": ">=18.16.0"
+  },
+  "type": "module",
+  "scripts": {
+    "pretest": "npm run lint",
+    "test": "cross-env NODE_DEBUG=japa:plugin-adonisjs c8 npm run quick:test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "clean": "del-cli build",
+    "precompile": "npm run lint && npm run clean",
+    "compile": "tsup-node && tsc --emitDeclarationOnly --declaration",
+    "build": "npm run compile",
+    "version": "npm run build",
+    "prepublishOnly": "npm run build",
+    "release": "release-it",
+    "quick:test": "node --import=ts-node-maintained/register/esm --enable-source-maps bin/test.ts"
+  },
+  "devDependencies": {
+    "@adonisjs/core": "^6.17.1",
+    "@adonisjs/eslint-config": "^2.0.0-beta.7",
+    "@adonisjs/prettier-config": "^1.4.0",
+    "@adonisjs/tsconfig": "^1.4.0",
+    "@japa/api-client": "^3.0.3",
+    "@japa/assert": "^4.0.1",
+    "@japa/browser-client": "^2.1.1",
+    "@japa/runner": "^4.1.0",
+    "@release-it/conventional-changelog": "^10.0.0",
+    "@swc/core": "^1.10.7",
+    "@types/node": "^22.10.5",
+    "c8": "^10.1.3",
+    "cross-env": "^7.0.3",
+    "del-cli": "^6.0.0",
+    "eslint": "^9.18.0",
+    "get-port": "^7.1.0",
+    "playwright": "^1.49.1",
+    "prettier": "^3.4.2",
+    "release-it": "^18.1.1",
+    "ts-node-maintained": "^10.9.4",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@adonisjs/core": "^6.17.0",
+    "@japa/api-client": "^2.0.3 || ^3.0.0",
+    "@japa/browser-client": "^2.0.3",
+    "@japa/runner": "^3.1.2 || ^4.0.0",
+    "playwright": "^1.42.1"
+  },
+  "peerDependenciesMeta": {
+    "@japa/api-client": {
+      "optional": true
+    },
+    "@japa/browser-client": {
+      "optional": true
+    },
+    "playwright": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/japa/plugin-adonisjs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/japa/plugin-adonisjs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/japa/plugin-adonisjs/issues"
+  },
+  "keywords": [
+    "plugin-adonisjs",
+    "japa-plugin"
+  ],
+  "author": "Harminder Virk <virk@adonisjs.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "tsup": {
+    "entry": [
+      "./index.ts"
+    ],
+    "outDir": "./build",
+    "clean": true,
+    "format": "esm",
+    "dts": false,
+    "sourcemap": false,
+    "target": "esnext"
+  },
+  "release-it": {
+    "git": {
+      "requireCleanWorkingDir": true,
+      "requireUpstream": true,
+      "commitMessage": "chore(release): ${version}",
+      "tagAnnotation": "v${version}",
+      "push": true,
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true
+    },
+    "npm": {
+      "publish": true,
+      "skipChecks": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "angular"
+        }
+      }
+    }
+  },
+  "c8": {
+    "reporter": [
+      "text",
+      "html"
+    ],
+    "exclude": [
+      "tests/**"
+    ]
+  },
+  "prettier": "@adonisjs/prettier-config"
+}

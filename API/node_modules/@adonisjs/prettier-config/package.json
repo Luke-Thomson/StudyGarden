@@ -1,0 +1,68 @@
+{
+  "name": "@adonisjs/prettier-config",
+  "description": "Prettier config preset for AdonisJS packages and applications",
+  "version": "1.4.5",
+  "type": "module",
+  "files": [
+    "index.cjs"
+  ],
+  "main": "./index.cjs",
+  "exports": {
+    ".": "./index.cjs"
+  },
+  "scripts": {
+    "release": "release-it"
+  },
+  "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.0",
+    "release-it": "^18.1.2"
+  },
+  "dependencies": {
+    "prettier-plugin-edgejs": "^1.0.1"
+  },
+  "homepage": "https://github.com/adonisjs/prettier-config#readme",
+  "bugs": {
+    "url": "https://github.com/adonisjs/prettier-config/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adonisjs/prettier-config.git"
+  },
+  "keywords": [
+    "prettier",
+    "adonisjs"
+  ],
+  "author": "Julien Ripouteau <julien@ripouteau.com>",
+  "contributors": [
+    "Harminder Virk <virk@adonisjs.com>",
+    "Romain Lanz <romain.lanz@pm.me>"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "provenance": true
+  },
+  "release-it": {
+    "git": {
+      "requireCleanWorkingDir": true,
+      "requireUpstream": true,
+      "commitMessage": "chore(release): ${version}",
+      "tagAnnotation": "v${version}",
+      "push": true,
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true
+    },
+    "npm": {
+      "publish": true,
+      "skipChecks": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "angular"
+        }
+      }
+    }
+  }
+}
