@@ -126,3 +126,8 @@ router.get('/swagger', async () => {
 router.get('/docs', async () => {
   return AutoSwagger.default.scalar('/swagger')
 })
+
+// Test endpoint vite + adonis connection
+router.get('/api/hello', async () => {
+  return { message: 'Hello from Adonis! v1.0' }
+})
