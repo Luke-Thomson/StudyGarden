@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useState } from "react";
+import AppRoutes from "./AppRoutes";
 
 function App() {
-  const [message, setMessage] = useState('Loading...')
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for testing
+  const [coins] = useState(0);
 
-  useEffect(() => {
-    fetch('/api/hello')
-      .then(res => res.json())
-      .then(data => setMessage(data.message))
-      .catch(() => setMessage('Failed to connect to Adonis'))
-  }, [])
+  const handleLogin = () => setIsAuthenticated(true);
 
   return (
-    <div>
-      <h1>Vite + Adonis Test</h1>
-      <p>{message}</p>
+    <div className="app-layout" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <AppRoutes
+          isAuthenticated={isAuthenticated}
+          onLogin={handleLogin}
+          coins={coins}
+        />
+      </div>
     </div>
-  )
+  );
 }
 
-export default App
-
-
+export default App;

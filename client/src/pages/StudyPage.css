@@ -1,0 +1,69 @@
+/* Study page layout: left vertical sidebar + main content.
+   Timer sits in a top-right container above the main content. */
+
+   .study-page-root {
+    display: grid;
+    grid-template-columns: 240px 1fr; /* left sidebar width + main area */
+    gap: 0;
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative; /* so absolute timer is positioned relative to this container */
+    background: transparent;
+  }
+  
+  /* Sidebar column (left) */
+  .study-sidebar {
+    background: transparent;
+    border-right: 1px solid rgba(162,198,83,0.14);
+    padding: 1.2rem 0.8rem;
+    box-sizing: border-box;
+    position: relative;
+  }
+  
+  /* Main content column */
+  .study-main {
+    position: relative;
+    padding: 2rem;
+    box-sizing: border-box;
+  }
+  
+  /* Timer container: absolute in top-right of the StudyPage area */
+  .study-timer-container {
+    position: absolute;
+    top: 18px;
+    right: 28px;
+    z-index: 999; /* ensure visible above content */
+    pointer-events: auto;
+  }
+  
+  /* Adjust timer on small screens */
+  @media (max-width: 900px) {
+    .study-page-root {
+      grid-template-columns: 1fr; /* stack for small screens */
+    }
+    .study-sidebar {
+      display: none; /* hide sidebar on small screens; you can change to show as a drawer */
+    }
+    .study-timer-container {
+      position: static;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+  
+  /* Basic content placeholders */
+  .study-content {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  
+  .course-view {
+    margin-top: 1.2rem;
+    padding: 1.2rem;
+    background: #fff;
+    border-radius: 10px;
+    min-height: 280px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }

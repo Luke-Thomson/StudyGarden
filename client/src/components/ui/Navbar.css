@@ -1,0 +1,170 @@
+/* Updated Navbar.css — increased logo width and tuned overlays
+   Adjust .logo-wrapper min-width and .logo-overlay widths if further fine-tuning is needed */
+   .main-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 2.5rem 1.2rem 1rem;
+    background: transparent;
+    border-bottom: 2px solid #aee571;
+    box-sizing: border-box;
+    z-index: 10;
+  }
+  
+  .left-section {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  
+  /* Logo wrapper holds the image and the clickable overlays */
+  /* Increased min-width so the logo displays wider and reaches the red box */
+  .logo-wrapper {
+    position: relative;
+    display: inline-block;
+    align-items: center;
+    min-width: 460px; /* <-- increased width to make logo wider; tweak this value if needed */
+    height: 84px;     /* adjust if you want the logo taller/shorter */
+  }
+  
+  /* Responsive image: preserve aspect ratio */
+  .navbar-logo-img {
+    display: block;
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+    border-radius: 6px;
+    z-index: 1;
+  }
+  
+  /* Invisible clickable overlays for left/right sections */
+  .logo-overlay {
+    position: absolute;
+    top: 8px; /* inset so focus border appears inside header */
+    bottom: 8px;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    outline: none;
+    z-index: 3; /* must sit above the image */
+    border-radius: 12px; /* rounded rectangle like your screenshot */
+    transition: box-shadow 120ms ease, border 120ms ease, background-color 120ms ease;
+  }
+  
+  /* Left/right widths intentionally leave a center gap for the pig.
+     Adjust the percent values below to tune the left/right click areas.
+     Make left + right smaller to make the logo appear wider relative to the red box. */
+  .logo-overlay.left {
+    left: 8px;
+    width: 36%; /* tune: smaller -> more center space, larger -> less */
+  }
+  .logo-overlay.right {
+    right: 8px;
+    width: 36%;
+  }
+  
+  /* Center non-clickable block covering the pig */
+  .logo-center {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 36%;
+    right: 36%;
+    pointer-events: none; /* ensures it's not clickable */
+    z-index: 2;
+    border-radius: 12px;
+    /* background: rgba(255,0,0,0.04);  debug visual - uncomment during tuning */
+  }
+  
+  /* Focus / active styles: show a red border when the overlay is clicked or focused */
+  .logo-overlay:focus,
+  .logo-overlay:focus-visible,
+  .logo-overlay:active {
+    outline: none;
+    border: 3px solid #e74c3c; /* red border on click/focus */
+    box-shadow: 0 0 0 6px rgba(231, 76, 60, 0.12); /* soft red glow */
+    background-color: rgba(231, 76, 60, 0.03);
+  }
+  
+  /* Hover hint */
+  .logo-overlay:hover {
+    background-color: rgba(162, 198, 83, 0.03);
+  }
+  
+  /* nav options (we removed Study/Garden links to avoid duplicates) */
+  .nav-options {
+    display: flex;
+    gap: 1.2rem;
+    margin-left: 1.2rem;
+    align-items: center;
+  }
+  
+  .nav-link {
+    font-size: 1.05rem;
+    color: #6c8b2f;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.2em 0.5em;
+  }
+  .nav-link:hover {
+    color: #4a752c;
+    text-decoration: underline;
+  }
+  
+  .right-section {
+    display: flex;
+    align-items: center;
+    gap: 1.3rem;
+  }
+  
+  /* piggy + profile */
+  .piggy-bank {
+    display: flex;
+    align-items: center;
+    background: #fffbe6;
+    border-radius: 24px;
+    padding: 0.2em 0.6em 0.2em 0.4em;
+    box-shadow: 1px 1px 4px #0001;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #7a632d;
+    margin-right: 0.8rem;
+  }
+  .piggy-icon {
+    width: 30px;
+    height: 30px;
+    image-rendering: pixelated;
+    margin-right: 0.3em;
+  }
+  .coin-count {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  
+  .profile-btn {
+    background: #aee571;
+    color: #4a752c;
+    border: none;
+    border-radius: 15px;
+    padding: 0.6em 1.2em;
+    font-size: 1.13em;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 #c2e197;
+    transition: background 0.12s;
+  }
+  .profile-btn:hover {
+    background: #cdf7ad;
+  }
+  
+  /* responsive: shrink logo area on small screens */
+  @media (max-width: 680px) {
+    .logo-wrapper {
+      min-width: 260px;
+      height: 48px;
+    }
+    .nav-options { display: none; } /* collapse nav for mobile */
+  }

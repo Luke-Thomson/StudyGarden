@@ -1,0 +1,131 @@
+.auth-bg {
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('../assets/ui/auth-bg.png') repeat-x center center;
+    background-size: auto 100%;
+    image-rendering: pixelated;
+    animation: pan-bg 30s linear infinite;
+    font-family: 'Press Start 2P', 'VT323', monospace, sans-serif;
+  }
+  
+  @keyframes pan-bg {
+    0% {
+      background-position-x: 0;
+    }
+    100% {
+      background-position-x: -1000px; /* Adjust this value for speed/amount */
+    }
+  }
+  
+  .auth-card {
+    background: #f5ecd0;
+    border: 4px solid #7ec850;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px #0002, 0 4px 0 #93e563;
+    padding: 2.5rem 2rem 2rem 2rem;
+    width: 340px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .auth-logo {
+    width: 80px;
+    margin-bottom: 1rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .auth-title {
+    margin: 0 0 0.7rem 0;
+    font-size: 1.3rem;
+    color: #4a752c;
+    text-shadow: 2px 2px 0 #fff, 0 2px 0 #c2e197;
+  }
+  
+  .auth-desc {
+    margin-bottom: 1.5rem;
+    color: #6c8b2f;
+    font-size: 1rem;
+  }
+  
+  .auth-divider {
+    margin: 1.2rem 0 0.7rem 0;
+    color: #b5c99a;
+    font-size: 0.95rem;
+    position: relative;
+  }
+  
+  .switch-btn {
+    border: none;
+    background: #aee571;
+    color: #4a752c;
+    font-family: inherit;
+    font-size: 1em;
+    border-radius: 6px;
+    padding: 0.5em 1.2em;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #c2e197;
+    transition: background 0.12s;
+  }
+  
+  .switch-btn:hover {
+    background: #cdf7ad;
+  }
+  .auth-card {
+    /* ...existing styles... */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .login-input {
+    width: 240px;
+    padding: 0.7em;
+    font-size: 1rem;
+    border: 2px solid #b2c5a7;
+    border-radius: 8px;
+    background: #fff;
+    color: #222;
+    outline: none;
+    margin-bottom: 0.3rem;
+    box-shadow: 1px 1px 3px #0001;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .login-input:focus {
+    border-color: #93e563;
+  }
+  
+  .login-btn {
+    width: 150px;
+    padding: 0.7em 1.2em;
+    border-radius: 12px;
+    background: #222;
+    color: #fff;
+    font-size: 1.08em;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.13s;
+  }
+  .login-btn:hover {
+    background: #444;
+  }

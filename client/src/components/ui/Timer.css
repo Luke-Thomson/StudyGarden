@@ -1,0 +1,120 @@
+.timer-root {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    background: transparent;
+    box-sizing: border-box;
+    color: #163212;
+  }
+  
+  /* header */
+  .timer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .timer-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #24521f;
+  }
+  
+  /* mode toggle */
+  .mode-toggle {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .mode-btn {
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #3c6a33;
+    cursor: pointer;
+  }
+  .mode-btn.active {
+    background: #aee571;
+    color: #1f3c12;
+    border-color: #9ad24f;
+  }
+  
+  /* displays container */
+  .timer-displays {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  /* digital display */
+  .timer-display {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: #ffffff;
+    color: #234016;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    min-width: 120px;
+    text-align: center;
+  }
+  
+  /* analog wrapper */
+  .timer-analog-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem;
+  }
+  
+  /* small adjustments to svg */
+  .analog-clock {
+    display: block;
+  }
+  
+  /* controls */
+  .timer-controls {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.2rem;
+  }
+  
+  .timer-btn {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: transform 0.08s ease, background 0.12s;
+  }
+  .timer-btn:active {
+    transform: translateY(1px);
+  }
+  .timer-btn.start {
+    background: #6ac34a;
+    color: #072701;
+  }
+  .timer-btn.stop {
+    background: #e74c3c;
+    color: #fff;
+  }
+  .timer-btn.complete {
+    background: #ffdca3;
+    color: #4a3a07;
+  }
+  .timer-btn.reset {
+    background: #f0f0f0;
+    color: #333;
+  }
+  
+  /* responsive: stack displays on small screens */
+  @media (max-width: 520px) {
+    .timer-displays {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
