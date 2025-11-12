@@ -16,6 +16,8 @@ npm install
 
 ### 2.2 Generate .env file
 
+Create a new file in /server called .env and fill it with the text below:
+
 TZ=UTC
 PORT=3333
 HOST=localhost
