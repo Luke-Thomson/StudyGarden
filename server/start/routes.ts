@@ -15,6 +15,8 @@ const ItemsController = () => import('#controllers/items_controller') // admin m
 
 const InventoryController = () => import('#controllers/inventories_controller') // user inventory management
 
+const GardenController = () => import('#controllers/gardens_controller') // garden management
+
 // -----------------------------
 // Auth (session/token endpoints)
 // -----------------------------
@@ -76,6 +78,7 @@ router
     router.get('/me/wallet', [WalletController, 'show'])
     router.get('/me/coins/ledger', [WalletController, 'ledger'])
     router.get('/me/inventory', [InventoryController, 'mine'])
+    router.get('/me/garden', [GardenController, 'show'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 
@@ -111,6 +114,16 @@ router
   .group(() => {
     router.post('/timer/start', [TimerController, 'start'])
     router.post('/timer/stop', [TimerController, 'stop'])
+  })
+  .use(middleware.auth({ guards: ['api'] }))
+
+// -----------------------------
+// Garden controls (owner-only)
+// -----------------------------
+router
+  .group(() => {
+    router.post('/garden/plant', [GardenController, 'plant'])
+    router.post('/garden/harvest', [GardenController, 'harvest'])
   })
   .use(middleware.auth({ guards: ['api'] }))
 
