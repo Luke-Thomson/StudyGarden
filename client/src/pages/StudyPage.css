@@ -1,7 +1,6 @@
 /* Study page layout: left vertical sidebar + main content.
    Timer sits in a top-right container above the main content. */
-
-   .study-page-root {
+.study-page-root {
     display: grid;
     grid-template-columns: 240px 1fr; /* left sidebar width + main area */
     gap: 0;
@@ -10,60 +9,154 @@
     box-sizing: border-box;
     position: relative; /* so absolute timer is positioned relative to this container */
     background: transparent;
-  }
-  
-  /* Sidebar column (left) */
-  .study-sidebar {
+}
+
+/* Sidebar column (left) */
+.study-sidebar {
     background: transparent;
     border-right: 1px solid rgba(162,198,83,0.14);
     padding: 1.2rem 0.8rem;
     box-sizing: border-box;
     position: relative;
-  }
-  
-  /* Main content column */
-  .study-main {
+}
+
+/* Main content column */
+.study-main {
     position: relative;
     padding: 2rem;
     box-sizing: border-box;
-  }
-  
-  /* Timer container: absolute in top-right of the StudyPage area */
-  .study-timer-container {
+}
+
+/* Timer container: absolute in top-right of the StudyPage area */
+.study-timer-container {
     position: absolute;
     top: 18px;
     right: 28px;
     z-index: 999; /* ensure visible above content */
     pointer-events: auto;
-  }
-  
-  /* Adjust timer on small screens */
-  @media (max-width: 900px) {
+}
+
+/* Adjust timer on small screens */
+@media (max-width: 900px) {
     .study-page-root {
-      grid-template-columns: 1fr; /* stack for small screens */
+        grid-template-columns: 1fr; /* stack for small screens */
     }
     .study-sidebar {
-      display: none; /* hide sidebar on small screens; you can change to show as a drawer */
+        display: none; /* hide sidebar on small screens; you can change to show as a drawer */
     }
     .study-timer-container {
-      position: static;
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: flex-end;
+        position: static;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: flex-end;
     }
-  }
-  
-  /* Basic content placeholders */
-  .study-content {
+}
+
+/* Basic content placeholders */
+.study-content {
     max-width: 1100px;
     margin: 0 auto;
-  }
-  
-  .course-view {
+}
+
+.study-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.control-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.control-label {
+    font-weight: 700;
+    color: #234016;
+    min-width: 130px;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.pill-btn {
+    border: 1px solid #9fc46c;
+    padding: 0.35rem 0.8rem;
+    border-radius: 24px;
+    background: #f7fdf2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pill-btn.active {
+    background: #9fc46c;
+    color: #12320d;
+    border-color: #76973d;
+}
+
+.duration-input {
+    width: 90px;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #d3dcd0;
+    font-size: 0.95rem;
+}
+
+.subject-chip {
+    background: #eef6e6;
+    border: 1px solid #d1e2c1;
+    border-radius: 12px;
+    padding: 0.35rem 0.8rem;
+    color: #2c4c1c;
+    min-width: 200px;
+}
+
+.course-view {
     margin-top: 1.2rem;
     padding: 1.2rem;
     background: #fff;
     border-radius: 10px;
     min-height: 280px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-  }
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+
+.new-subject-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.new-subject-row {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.new-subject-row input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #d3dcd0;
+}
+
+.new-subject-row button {
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    background: #9fc46c;
+    color: #12320d;
+    border: 1px solid #76973d;
+    cursor: pointer;
+}
+
+.status-banner {
+    margin-top: 0.8rem;
+    padding: 0.65rem 0.8rem;
+    background: #f2f7ec;
+    border: 1px solid #d1e2c1;
+    border-radius: 10px;
+    color: #234016;
+}

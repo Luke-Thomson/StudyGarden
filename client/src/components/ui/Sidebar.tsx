@@ -1,35 +1,37 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 
-/* Simple clickable vertical list of courses. Replace the sample list with your real courses. */
-const sampleCourses = [
-  { id: "course-1", title: "Algebra I", to: "/study/course/algebra-1" },
-  { id: "course-2", title: "Biology Basics", to: "/study/course/biology-basics" },
-  { id: "course-3", title: "Spanish 101", to: "/study/course/spanish-101" },
-  { id: "course-4", title: "History", to: "/study/course/history" },
-];
+interface SidebarProps {
+    subjects: { id: number; title: string }[];
+    selectedId: number | null;
+    onSelect: (id: number) => void;
+    loading?: boolean;
+}
 
-const Sidebar: React.FC = () => {
-  const location = useLocation();
-
-  return (
-    <nav className="sidebar" aria-label="Your courses">
-      <div className="sidebar-title">Your Courses</div>
-      <ul className="course-list">
-        {sampleCourses.map((c) => {
-          const active = location.pathname === c.to;
-          return (
-            <li key={c.id} className={`course-item ${active ? "active" : ""}`}>
-              <Link to={c.to} className="course-link" title={c.title}>
-                {c.title}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+const Sidebar: React.FC<SidebarProps> = ({subjects, selectedId, onSelect, loading = false}) => {
+    return (
+        <nav className="sidebar" aria-label="Your courses">
+            <div className="sidebar-title">Your Courses</div>
+            {loading && <div className="course-loading">Loading…</div>}
+            <ul className="course-list">
+                {subjects.length === 0 && !loading && <li className="course-item">No subjects yet</li>}
+                {subjects.map((c) => {
+                    const active = c.id === selectedId;
+                    return (
+                        <li key={c.id} className={`course-item ${active ? "active" : ""}`}>
+                            <button
+                                type="button"
+                                className="course-link"
+                                title={c.title}
+                                onClick={() => onSelect(c.id)}
+                            >
+                                {c.title}
+                            </button>
+                        </li>
+                    );
+                })}
+            </ul>
+        </nav>
+    );
 };
-
 export default Sidebar;

@@ -1,41 +1,196 @@
-import React from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import Timer from "../components/ui/Timer";
 import Sidebar from "../components/ui/Sidebar";
 import "./StudyPage.css";
+import api, {type TimerMode} from "../api";
+import type {Subject} from "../types";
 
-const StudyPage: React.FC = () => {
-  const handleSessionComplete = (elapsedSeconds: number) => {
-    console.log("Study session completed:", elapsedSeconds, "seconds");
-    // hook: award coins / save session
-  };
+interface StudyPageProps {
+    token: string;
+    subjects: Subject[];
+    onSubjectsRefresh: () => Promise<void>;
+    onSubjectCreate: (title: string) => Promise<Subject | null>;
+    onWalletRefresh: () => Promise<void>;
+}
 
-  return (
-    <div className="study-page-root">
-      {/* Left vertical courses sidebar - only rendered inside StudyPage */}
-      <aside className="study-sidebar">
-        <Sidebar />
-      </aside>
-
-      {/* Main area (course content) */}
-      <main className="study-main">
-        {/* Timer in a dedicated container positioned top-right over the study area */}
-        <div className="study-timer-container" aria-hidden={false}>
-          <Timer initialSeconds={0} onSessionComplete={handleSessionComplete} defaultMode="digital" />
+const StudyPage: React.FC<StudyPageProps> = ({
+                                                 token,
+                                                 subjects,
+                                                 onSubjectsRefresh,
+                                                 onSubjectCreate,
+                                                 onWalletRefresh,
+                                             }) => {
+    const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
+    const [mode, setMode] = useState<TimerMode>("STUDY");
+    const [durationMinutes, setDurationMinutes] = useState(25);
+    const [status, setStatus] = useState<string | null>(null);
+    const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+    const [loadingSubjects, setLoadingSubjects] = useState(false);
+    const [creatingSubject, setCreatingSubject] = useState(false);
+    const [newSubjectTitle, setNewSubjectTitle] = useState("");
+    const [timerKey, setTimerKey] = useState(0);
+    useEffect(() => {
+        if (subjects.length > 0 && selectedSubjectId === null) {
+            setSelectedSubjectId(subjects[0].id);
+        }
+    }, [subjects, selectedSubjectId]);
+    useEffect(() => {
+        const loadSubjects = async () => {
+            setLoadingSubjects(true);
+            try {
+                await onSubjectsRefresh();
+            } finally {
+                setLoadingSubjects(false);
+            }
+        };
+        if (subjects.length === 0) loadSubjects();
+    }, []);
+    const selectedSubjectTitle = useMemo(() => {
+        return subjects.find((s) => s.id === selectedSubjectId)?.title ?? "";
+    }, [subjects, selectedSubjectId]);
+    const validateStart = () => {
+        if (mode === "STUDY" && !selectedSubjectId) {
+            setStatus("Select a subject to start a study session.");
+            return false;
+        }
+        if (durationMinutes < 1) {
+            setStatus("Duration must be at least 1 minute.");
+            return false;
+        }
+        return true;
+    };
+    const handleStart = async () => {
+        if (!validateStart()) return false;
+        try {
+            const payload = {
+                durationSec: durationMinutes * 60,
+                mode,
+                subjectId: mode === "STUDY" ? selectedSubjectId! : undefined,
+            };
+            const res = await api.startTimer(token, payload);
+            setActiveSessionId(res.sessionId);
+            setStatus("Session started!");
+            setTimerKey((k) => k + 1);
+            return true;
+        } catch (err: any) {
+            setStatus(err?.message ?? "Unable to start session");
+            return false;
+        }
+    };
+    const finalizeSession = async () => {
+        if (!activeSessionId) {
+            setStatus("No active session to stop.");
+            return;
+        }
+        try {
+            const res = await api.stopTimer(token, activeSessionId);
+            setStatus(res.message ?? "Session stopped.");
+            await onWalletRefresh();
+        } catch (err: any) {
+            setStatus(err?.message ?? "Unable to stop session");
+        } finally {
+            setActiveSessionId(null);
+        }
+    };
+    const handleStop = async () => {
+        await finalizeSession();
+    };
+    const handleSessionComplete = async () => {
+        await finalizeSession();
+    };
+    const handleCreateSubject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newSubjectTitle.trim()) return;
+        setCreatingSubject(true);
+        try {
+            const created = await onSubjectCreate(newSubjectTitle.trim());
+            if (created) {
+                setSelectedSubjectId(created.id);
+                setNewSubjectTitle("");
+            }
+        } finally {
+            setCreatingSubject(false);
+        }
+    };
+    return (
+        <div className="study-page-root">
+            <aside className="study-sidebar">
+                <Sidebar
+                    subjects={subjects}
+                    selectedId={selectedSubjectId}
+                    onSelect={(id) => setSelectedSubjectId(id)}
+                    loading={loadingSubjects}
+                />
+            </aside>
+            <main className="study-main">
+                <div className="study-timer-container" aria-hidden={false}>
+                    <Timer
+                        key={timerKey}
+                        initialSeconds={0}
+                        onSessionComplete={handleSessionComplete}
+                        onStart={handleStart}
+                        onStop={handleStop}
+                        defaultMode="digital"
+                    />
+                </div>
+                <section className="study-content">
+                    <h1>Study</h1>
+                    <p className="study-sub">Track focused time to earn coins, then spend them in your garden.</p>
+                    <div className="study-controls">
+                        <div className="control-row">
+                            <label className="control-label">Session type</label>
+                            <div className="control-buttons">
+                                {["STUDY", "BREAK_SHORT", "BREAK_LONG"].map((m) => (
+                                    <button
+                                        key={m}
+                                        type="button"
+                                        className={`pill-btn ${mode === m ? "active" : ""}`}
+                                        onClick={() => setMode(m as TimerMode)}
+                                    >
+                                        {m === "STUDY" ? "Study" : m === "BREAK_SHORT" ? "Short Break" : "Long Break"}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="control-row">
+                            <label className="control-label">Duration (minutes)</label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={durationMinutes}
+                                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                                className="duration-input"
+                            />
+                        </div>
+                        <div className="control-row">
+                            <label className="control-label">Current subject</label>
+                            <div
+                                className="subject-chip">{selectedSubjectTitle || "Choose a subject from the left"}</div>
+                        </div>
+                    </div>
+                    <div className="course-view">
+                        <form className="new-subject-form" onSubmit={handleCreateSubject}>
+                            <label htmlFor="new-subject" className="control-label">Add a subject</label>
+                            <div className="new-subject-row">
+                                <input
+                                    id="new-subject"
+                                    type="text"
+                                    value={newSubjectTitle}
+                                    onChange={(e) => setNewSubjectTitle(e.target.value)}
+                                    placeholder="e.g. Algebra"
+                                    disabled={creatingSubject}
+                                />
+                                <button type="submit" disabled={creatingSubject || !newSubjectTitle.trim()}>
+                                    {creatingSubject ? "Saving…" : "Save"}
+                                </button>
+                            </div>
+                        </form>
+                        {status && <div className="status-banner">{status}</div>}
+                        <p>Select a course from the left to view lessons / content here.</p>
+                    </div>
+                </section>
+            </main>
         </div>
-
-        {/* Page content */}
-        <section className="study-content">
-          <h1>Study</h1>
-          <p className="study-sub">Select a course on the left to open it. Timer sits at the top-right.</p>
-
-          {/* Example course content placeholder */}
-          <div className="course-view">
-            <p>Select a course from the left to view lessons / content here.</p>
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+    );
 };
-
 export default StudyPage;
