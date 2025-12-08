@@ -43,10 +43,18 @@ function App() {
         loadProfile(token);
     }, [token]);
     const handleLogin = async (email: string, password: string) => {
+        setError(null);
         const res = await api.login(email, password);
         localStorage.setItem("sg_token", res.token);
         setToken(res.token);
     };
+
+    const handleRegister = async (fullName: string, email: string, password: string) => {
+        setError(null);
+        await api.register(fullName, email, password);
+        await handleLogin(email, password);
+    };
+
     const handleLogout = async () => {
         if (token) {
             try {
@@ -89,6 +97,7 @@ function App() {
                     loadingProfile={loadingProfile}
                     authError={error}
                     onLogin={handleLogin}
+                    onRegister={handleRegister}
                     onLogout={handleLogout}
                     onWalletRefresh={refreshWallet}
                     subjects={subjects}

@@ -129,3 +129,14 @@
   .login-btn:hover {
     background: #444;
   }
+
+.auth-error {
+    background: #ffe3d6;
+    border: 2px solid #ff9f80;
+    color: #8a2d12;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    width: 100%;
+    font-size: 0.9rem;
+    box-shadow: 1px 1px 0 #e3c2b6;
+}

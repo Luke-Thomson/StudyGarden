@@ -13,6 +13,7 @@ interface AppRoutesProps {
     loadingProfile: boolean;
     authError: string | null;
     onLogin: (email: string, password: string) => Promise<void>;
+    onRegister: (fullName: string, email: string, password: string) => Promise<void>;
     onLogout: () => Promise<void> | void;
     onWalletRefresh: () => Promise<void>;
     subjects: Subject[];
@@ -28,6 +29,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
                                                  loadingProfile,
                                                  authError,
                                                  onLogin,
+                                                 onRegister,
                                                  onLogout,
                                                  onWalletRefresh,
                                                  subjects,
@@ -46,7 +48,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
                 {!isAuthenticated || !token ? (
                     <Route
                         path="*"
-                        element={<AuthPage onLoginSuccess={onLogin} loading={loadingProfile} error={authError} />}
+                        element={              <AuthPage
+                            onLoginSuccess={onLogin}
+                            onRegister={onRegister}
+                            loading={loadingProfile}
+                            error={authError}
+                        />}
                     />
                 ) : (
                     <>

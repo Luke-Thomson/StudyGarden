@@ -29,6 +29,15 @@ function authHeaders(token?: string): Record<string, string> {
 }
 
 export const api = {
+    async register(fullName: string, email: string, password: string) {
+        const res = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName, email, password }),
+        })
+        return handleResponse<any>(res)
+    },
+
     async login(email: string, password: string) {
         const res = await fetch(`${API_BASE}/login`, {
             method: 'POST',
