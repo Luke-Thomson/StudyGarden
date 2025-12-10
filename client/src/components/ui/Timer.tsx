@@ -4,8 +4,8 @@ import "./Timer.css";
 type DisplayMode = "digital" | "analog";
 
 interface TimerProps {
-    initialSeconds?: number; // start value in seconds (default 0)
-    onSessionComplete?: (elapsedSeconds: number) => void; // called when user explicitly marks session complete
+    initialSeconds?: number; // duration in seconds (default 0)
+    onSessionComplete?: (elapsedSeconds: number) => void; // called when user explicitly marks session complete or when timer ends
     defaultMode?: DisplayMode;
     onStart?: () => Promise<boolean | void> | boolean | void;
     onStop?: (elapsedSeconds: number) => Promise<void> | void;
@@ -124,8 +124,9 @@ const Timer: React.FC<TimerProps> = ({
                                          onStop,
                                          disabled = false,
                                      }) => {
-    const [seconds, setSeconds] = useState<number>(initialSeconds);
+    const [secondsRemaining, setSecondsRemaining] = useState<number>(initialSeconds);
     const [running, setRunning] = useState<boolean>(false);
+    const [completedNotice, setCompletedNotice] = useState<string | null>(null);
 
     const safeMode = (m: unknown): DisplayMode => {
         if (m === "digital" || m === "analog") return m;
@@ -134,10 +135,14 @@ const Timer: React.FC<TimerProps> = ({
 
     const [mode, setMode] = useState<DisplayMode>(() => safeMode(defaultMode));
     const intervalRef = useRef<number | null>(null);
+    const durationRef = useRef<number>(initialSeconds);
 
     useEffect(() => {
-        setSeconds(initialSeconds);
-    }, [initialSeconds]);
+        if (!running) {
+            setSecondsRemaining(initialSeconds);
+            durationRef.current = initialSeconds;
+        }
+    }, [initialSeconds, running]);
 
     useEffect(() => {
         return () => {
@@ -147,19 +152,42 @@ const Timer: React.FC<TimerProps> = ({
         };
     }, []);
 
+    const stopInterval = () => {
+        if (intervalRef.current !== null) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    };
+
     useEffect(() => {
         if (running) {
             if (intervalRef.current !== null) return;
             intervalRef.current = window.setInterval(() => {
-                setSeconds((s) => s + 1);
+                setSecondsRemaining((s) => Math.max(s - 1, 0));
             }, 1000);
         } else {
-            if (intervalRef.current !== null) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
+            stopInterval();
         }
     }, [running]);
+
+    useEffect(() => {
+        if (!running) return;
+        if (secondsRemaining > 0) return;
+
+        const elapsedSeconds = Math.max(0, durationRef.current - secondsRemaining);
+        stopInterval();
+        setRunning(false);
+        setCompletedNotice("Time's up! Session complete.");
+
+        (async () => {
+            if (onSessionComplete) await onSessionComplete(elapsedSeconds);
+            if (onStop) await onStop(elapsedSeconds);
+        })();
+
+        if (typeof window !== "undefined") {
+            window.alert("Time's up! Take a break.");
+        }
+    }, [secondsRemaining, running, onSessionComplete, onStop]);
 
     const start = async () => {
         if (disabled) return;
@@ -167,23 +195,33 @@ const Timer: React.FC<TimerProps> = ({
             const ok = await onStart();
             if (ok === false) return;
         }
+        durationRef.current = initialSeconds;
+        setSecondsRemaining(initialSeconds);
+        setCompletedNotice(null);
         setRunning(true);
     };
 
     const stop = async () => {
+        const elapsedSeconds = Math.max(0, durationRef.current - secondsRemaining);
         setRunning(false);
-        if (onStop) await onStop(seconds);
+        stopInterval();
+        if (onStop) await onStop(elapsedSeconds);
     };
 
     const reset = () => {
         setRunning(false);
-        setSeconds(initialSeconds);
+        stopInterval();
+        setSecondsRemaining(initialSeconds);
+        durationRef.current = initialSeconds;
+        setCompletedNotice(null);
     };
 
     const stopAndComplete = async () => {
+        const elapsedSeconds = Math.max(0, durationRef.current - secondsRemaining);
         setRunning(false);
-        if (onSessionComplete) onSessionComplete(seconds);
-        if (onStop) await onStop(seconds);
+        stopInterval();
+        if (onSessionComplete) await onSessionComplete(elapsedSeconds);
+        if (onStop) await onStop(elapsedSeconds);
     };
 
     const showDigital = mode === "digital";
@@ -219,12 +257,12 @@ const Timer: React.FC<TimerProps> = ({
                         aria-live="polite"
                         aria-atomic="true"
                     >
-                        {formatTime(seconds)}
+                        {formatTime(secondsRemaining)}
                     </div>
                 )}
                 {showAnalog && (
                     <div className="timer-analog-wrapper" aria-hidden={!showAnalog}>
-                        <AnalogClock seconds={seconds} size={140}/>
+                        <AnalogClock seconds={secondsRemaining} size={140} />
                     </div>
                 )}
             </div>
@@ -261,6 +299,11 @@ const Timer: React.FC<TimerProps> = ({
                     Reset
                 </button>
             </div>
+            {completedNotice && (
+                <div className="timer-status" role="status" aria-live="polite">
+                    {completedNotice}
+                </div>
+            )}
         </div>
     );
 };

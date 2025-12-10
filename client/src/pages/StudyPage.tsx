@@ -28,7 +28,6 @@ const StudyPage: React.FC<StudyPageProps> = ({
     const [loadingSubjects, setLoadingSubjects] = useState(false);
     const [creatingSubject, setCreatingSubject] = useState(false);
     const [newSubjectTitle, setNewSubjectTitle] = useState("");
-    const [timerKey, setTimerKey] = useState(0);
     useEffect(() => {
         if (subjects.length > 0 && selectedSubjectId === null) {
             setSelectedSubjectId(subjects[0].id);
@@ -48,6 +47,7 @@ const StudyPage: React.FC<StudyPageProps> = ({
     const selectedSubjectTitle = useMemo(() => {
         return subjects.find((s) => s.id === selectedSubjectId)?.title ?? "";
     }, [subjects, selectedSubjectId]);
+    const durationSeconds = useMemo(() => durationMinutes * 60, [durationMinutes]);
     const validateStart = () => {
         if (mode === "STUDY" && !selectedSubjectId) {
             setStatus("Select a subject to start a study session.");
@@ -63,14 +63,13 @@ const StudyPage: React.FC<StudyPageProps> = ({
         if (!validateStart()) return false;
         try {
             const payload = {
-                durationSec: durationMinutes * 60,
+                durationSec: durationSeconds,
                 mode,
                 subjectId: mode === "STUDY" ? selectedSubjectId! : undefined,
             };
             const res = await api.startTimer(token, payload);
             setActiveSessionId(res.sessionId);
             setStatus("Session started!");
-            setTimerKey((k) => k + 1);
             return true;
         } catch (err: any) {
             setStatus(err?.message ?? "Unable to start session");
@@ -125,7 +124,6 @@ const StudyPage: React.FC<StudyPageProps> = ({
             <main className="study-main">
                 <div className="study-timer-container" aria-hidden={false}>
                     <Timer
-                        key={timerKey}
                         initialSeconds={0}
                         onSessionComplete={handleSessionComplete}
                         onStart={handleStart}
