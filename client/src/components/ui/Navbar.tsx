@@ -1,52 +1,43 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
 import logo from "../../assets/ui/logo.png";
 import "./Navbar.css";
 
-const Navbar: React.FC = () => {
-  return (
-    <header className="main-header">
-      <div className="left-section">
-        {/* Logo wrapper with two clickable regions and a non-clickable center divider */}
-        <div className="logo-wrapper" aria-hidden={false}>
-          <img src={logo} alt="Study Garden logo" className="navbar-logo-img" />
+interface NavbarProps {
+    coins: number;
+    userName?: string;
+    onLogout?: () => void | Promise<void>;
+}
 
-          {/* Left clickable area -> Study */}
-          <Link
-            to="/study"
-            className="logo-overlay left"
-            aria-label="Go to Study section"
-            title="Study"
-          />
-
-          {/* Center area (pig) - intentionally non-clickable */}
-          <div className="logo-center" aria-hidden="true" />
-
-          {/* Right clickable area -> Garden */}
-          <Link
-            to="/garden"
-            className="logo-overlay right"
-            aria-label="Go to Garden section"
-            title="Garden"
-          />
-        </div>
-
-        {/* Remove duplicate Study/Garden text links — only keep other nav links if needed */}
-        <nav className="nav-options" aria-label="Main navigation">
-          {/* If you don't want any text nav items, remove the contents of this <nav> */}
-          <Link to="/profile" className="nav-link">Profile</Link>
-        </nav>
-      </div>
-
-      <div className="right-section">
-        <div className="piggy-bank" title="Coins Icon">
-          <img src="/piggybank.png" className="piggy-icon" alt="" />
-          <span className="coin-count">0</span>
-        </div>
-        <button className="profile-btn">Sign In</button>
-      </div>
-    </header>
-  );
+const Navbar: React.FC<NavbarProps> = ({coins, userName, onLogout}) => {
+    return (
+        <header className="main-header">
+            <div className="left-section">
+                <div className="logo-wrapper" aria-hidden={false}>
+                    <img src={logo} alt="Study Garden logo" className="navbar-logo-img"/>
+                    <Link
+                        to="/study"
+                        className="logo-overlay left"
+                        aria-label="Go to Study section"
+                        title="Study"
+                    />
+                    <div className="logo-center" aria-hidden="true"/>
+                </div>
+                <nav className="nav-options" aria-label="Main navigation">
+                    <Link to="/study" className="nav-link">Study</Link>
+                    <Link to="/garden" className="nav-link">Garden</Link>
+                </nav>
+            </div>
+            <div className="right-section">
+                <div className="piggy-bank" title="Coins Icon">
+                    <img src="/piggybank.png" className="piggy-icon" alt=""/>
+                    <span className="coin-count">{coins}</span>
+                </div>
+                <button className="profile-btn" onClick={onLogout}>
+                    {userName ? `Sign out (${userName})` : "Sign Out"}
+                </button>
+            </div>
+        </header>
+    );
 };
-
 export default Navbar;

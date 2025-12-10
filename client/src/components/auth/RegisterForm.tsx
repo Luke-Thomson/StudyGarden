@@ -1,12 +1,11 @@
-import {useState} from "react";
-
-interface LoginFormProps {
-    onSuccess: (email: string, password: string) => Promise<void>;
+import { useState } from "react";
+interface RegisterFormProps {
+    onSuccess: (fullName: string, email: string, password: string) => Promise<void>;
     loading?: boolean;
     serverError?: string;
 }
-
-const LoginForm: React.FC<LoginFormProps> = ({onSuccess, loading = false, serverError}) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, loading = false, serverError }) => {
+    const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -14,15 +13,15 @@ const LoginForm: React.FC<LoginFormProps> = ({onSuccess, loading = false, server
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        if (!email || !password) {
-            setError("Email and password are required");
+        if (!fullName || !email || !password) {
+            setError("Name, email, and password are required");
             return;
         }
         try {
             setSubmitting(true);
-            await onSuccess(email, password);
+            await onSuccess(fullName, email, password);
         } catch (err: any) {
-            setError(err?.message ?? "Login failed");
+            setError(err?.message ?? "Registration failed");
         } finally {
             setSubmitting(false);
         }
@@ -31,15 +30,26 @@ const LoginForm: React.FC<LoginFormProps> = ({onSuccess, loading = false, server
     return (
         <form className="login-form" onSubmit={handleSubmit}>
             {(error || serverError) && (
-                <div className="auth-error" role="alert">{error ?? serverError}</div>
+                <div className="auth-error" role="alert">
+                    {error ?? serverError}
+                </div>
             )}
+            <input
+                type="text"
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="login-input"
+                autoComplete="name"
+                disabled={disabled}
+            />
             <input
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="login-input"
-                autoComplete="username"
+                autoComplete="email"
                 disabled={disabled}
             />
             <input
@@ -48,13 +58,13 @@ const LoginForm: React.FC<LoginFormProps> = ({onSuccess, loading = false, server
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="login-input"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 disabled={disabled}
             />
             <button type="submit" className="login-btn" disabled={disabled}>
-                {disabled ? "Signing in…" : "Log In"}
+                {disabled ? "Creating..." : "Create account"}
             </button>
         </form>
     );
 };
-export default LoginForm;
+export default RegisterForm;

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Tester · Garden</title>
+  <link rel="stylesheet" href="test-common.css" />
+</head>
+<body data-page="garden">
+<header class="stack">
+  <div class="row">
+    <label class="card stack" style="flex:1 1 320px">
+      <span class="small muted">API Base URL</span>
+      <input id="baseUrl" placeholder="http://localhost:3333" />
+    </label>
+    <div class="card stack" style="flex:1 1 320px">
+      <span class="small muted">Auth Token (Bearer)</span>
+      <div class="row">
+        <input id="token" placeholder="Requires auth" style="flex:1" />
+        <button id="clearToken" class="warn">Logout/clear</button>
+      </div>
+      <div class="small muted">Stored as <code class="badge">api_token</code> in <code class="badge">localStorage</code>.</div>
+    </div>
+    <div class="card stack" style="flex:0 0 220px; align-items:flex-start">
+      <span class="small muted">Docs</span>
+      <div class="row">
+        <button id="openSwagger">/swagger</button>
+        <button id="openDocs">/docs</button>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-card">
+    <a data-page-link="generic" href="test.html">Generic</a>
+    <a data-page-link="auth" href="test-auth.html">Auth &amp; Profile</a>
+    <a data-page-link="users" href="test-users.html">Users</a>
+    <a data-page-link="subjects" href="test-subjects.html">Subjects</a>
+    <a data-page-link="timer" href="test-timer.html">Timer</a>
+    <a data-page-link="items" href="test-items.html">Items</a>
+    <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
+    <a data-page-link="admin" href="test-admin.html">Admin</a>
+    <a data-page-link="garden" href="test-garden.html">Garden</a>
+  </nav>
+</header>
+
+<main class="stack" style="gap:16px;">
+  <section class="grid">
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>View Garden</strong>
+        <span class="pill">GET /garden</span>
+      </div>
+      <button id="btnGardenShow">GET /garden</button>
+    </div>
+
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Plant</strong>
+        <span class="pill">POST /garden/plant</span>
+      </div>
+      <input id="plantRow" placeholder="row (0-4)" />
+      <input id="plantCol" placeholder="col (0-4)" />
+      <input id="plantSeedSlug" placeholder="seed slug (e.g. tomato)" />
+      <button id="btnGardenPlant" class="primary">Plant</button>
+      <span class="small muted">Requires unlocked seed and 1 seed in inventory.</span>
+    </div>
+
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <strong>Harvest</strong>
+        <span class="pill">POST /garden/harvest</span>
+      </div>
+      <input id="harvestRow" placeholder="row (0-4)" />
+      <input id="harvestCol" placeholder="col (0-4)" />
+      <button id="btnGardenHarvest">Harvest</button>
+    </div>
+
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <div class="endpoint">
+        <span class="method k" id="lastMethod"></span>
+        <span id="lastUrl" class="muted" style="margin-left:6px"></span>
+      </div>
+      <div class="row small">
+        <span id="statusBadge" class="pill">—</span>
+      </div>
+    </div>
+    <div id="out">Response will appear here…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { initLayout, request } from './test-common.js'
+
+  initLayout()
+
+  document.getElementById('btnGardenShow').addEventListener('click', () => {
+    request('GET', '/me/garden')
+  })
+
+  document.getElementById('btnGardenPlant').addEventListener('click', () => {
+    const row = Number(document.getElementById('plantRow').value)
+    const col = Number(document.getElementById('plantCol').value)
+    const seedSlug = document.getElementById('plantSeedSlug').value.trim()
+    const body = { row, col, seedSlug }
+    request('POST', '/garden/plant', body)
+  })
+
+  document.getElementById('btnGardenHarvest').addEventListener('click', () => {
+    const row = Number(document.getElementById('harvestRow').value)
+    const col = Number(document.getElementById('harvestCol').value)
+    const body = { row, col }
+    request('POST', '/garden/harvest', body)
+  })
+
+</script>
+</body>
+</html>
+

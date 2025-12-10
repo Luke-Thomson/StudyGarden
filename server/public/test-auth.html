@@ -38,6 +38,7 @@
     <a data-page-link="items" href="test-items.html">Items</a>
     <a data-page-link="inventory" href="test-inventory.html">Inventory</a>
     <a data-page-link="admin" href="test-admin.html">Admin</a>
+    <a data-page-link="garden" href="test-garden.html">Garden</a>
   </nav>
 </header>
 
@@ -95,6 +96,7 @@
       <button id="btnMyWallet">GET /me/wallet</button>
       <button id="btnMyLedger">GET /me/coins/ledger</button>
       <button id="btnMyInventory">GET /me/inventory</button>
+      <button id="btnMyGarden">GET /me/garden</button>
     </div>
   </section>
 
@@ -166,6 +168,7 @@
   document.getElementById('btnMyWallet').addEventListener('click', () => request('GET', '/me/wallet'))
   document.getElementById('btnMyLedger').addEventListener('click', () => request('GET', '/me/coins/ledger'))
   document.getElementById('btnMyInventory').addEventListener('click', () => request('GET', '/me/inventory'))
+  document.getElementById('btnMyGarden').addEventListener('click', () => request('GET', '/me/garden'))
 </script>
 </body>
 </html>
