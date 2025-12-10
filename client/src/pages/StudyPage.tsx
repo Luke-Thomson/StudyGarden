@@ -47,7 +47,6 @@ const StudyPage: React.FC<StudyPageProps> = ({
     const selectedSubjectTitle = useMemo(() => {
         return subjects.find((s) => s.id === selectedSubjectId)?.title ?? "";
     }, [subjects, selectedSubjectId]);
-    const durationSeconds = useMemo(() => durationMinutes * 60, [durationMinutes]);
     const validateStart = () => {
         if (mode === "STUDY" && !selectedSubjectId) {
             setStatus("Select a subject to start a study session.");
@@ -63,7 +62,7 @@ const StudyPage: React.FC<StudyPageProps> = ({
         if (!validateStart()) return false;
         try {
             const payload = {
-                durationSec: durationSeconds,
+                durationSec: durationMinutes * 60,
                 mode,
                 subjectId: mode === "STUDY" ? selectedSubjectId! : undefined,
             };
