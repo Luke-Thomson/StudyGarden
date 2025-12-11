@@ -1,3 +1,4 @@
+import type { LeaderboardRange, SessionTotals, StudyLeaderboardResponse } from "./types"
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3333'
 export type TimerMode = 'STUDY' | 'BREAK_SHORT' | 'BREAK_LONG'
 
@@ -152,5 +153,15 @@ export const api = {
         })
         return handleResponse<any>(res)
     },
+    async leaderboardStudy(range: LeaderboardRange = 'week') {
+        const res = await fetch(`${API_BASE}/leaderboard/study?range=${encodeURIComponent(range)}`)
+        return handleResponse<StudyLeaderboardResponse>(res)
+    },
+    async mySessionTotals(token: string) {
+        const res = await fetch(`${API_BASE}/me/sessions/totals`, {
+            headers: { ...authHeaders(token) },
+        })
+        return handleResponse<SessionTotals>(res)
+    }
 }
 export default api
