@@ -55,7 +55,7 @@ export default class GardenService {
             slug: p.currentPlant.item.slug,
           },
           status: p.currentPlant.status,
-          stage: p.currentPlant.stage,
+          stage: p.currentPlant.currentStage,
           plantedAt: p.currentPlant.plantedAt?.toISO(),
         }
       } else {

@@ -17,6 +17,8 @@ const InventoryController = () => import('#controllers/inventories_controller') 
 
 const GardenController = () => import('#controllers/gardens_controller') // garden management
 
+const LeaderboardController = () => import('#controllers/leaderboards_controller')
+
 // -----------------------------
 // Auth (session/token endpoints)
 // -----------------------------
@@ -29,6 +31,7 @@ router
 // Public user registration
 // -----------------------------
 router.post('/register', [AuthController, 'register']) // register (creates role: 'user')
+router.get('/leaderboard/study', [LeaderboardController, 'study']) //?range=day,week,month,year
 
 // -----------------------------
 // Admin-only management
