@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import StudyPage from "./pages/StudyPage";
 import GardenPage from "./pages/GardenPage";
 import AuthPage from "./pages/AuthPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
 import Navbar from "./components/ui/Navbar";
 import type { Subject, UserProfile } from "./types";
 interface AppRoutesProps {
@@ -73,6 +74,10 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
                         <Route
                             path="/garden"
                             element={<GardenPage token={token} onWalletRefresh={onWalletRefresh} />}
+                        />
+                        <Route
+                            path="/leaderboard/study"
+                            element={<LeaderboardPage token={token} user={user} />}
                         />
                         <Route path="*" element={<Navigate to="/study" replace />} />
                     </>

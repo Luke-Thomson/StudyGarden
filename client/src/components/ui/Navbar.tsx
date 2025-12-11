@@ -25,6 +25,7 @@ const Navbar: React.FC<NavbarProps> = ({coins, userName, onLogout}) => {
                 </div>
                 <nav className="nav-options" aria-label="Main navigation">
                     <Link to="/study" className="nav-link">Study</Link>
+                    <Link to="/leaderboard/study" className="nav-link">Leaderboard</Link>
                     <Link to="/garden" className="nav-link">Garden</Link>
                 </nav>
             </div>
