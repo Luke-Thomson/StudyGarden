@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
 import { authRegisterValidator } from '#validators/auth_register'
 import { authLoginValidator } from '#validators/auth_login'
+import WalletService from "#services/wallet_service";
 
 export default class AuthController {
   public async register({ request, response }: HttpContext) {
@@ -10,6 +11,7 @@ export default class AuthController {
     try {
       // role defaults to 'user' at DB or model level; set explicitly if you prefer
       const user = await User.create({ ...data, role: 'user' })
+      await WalletService.credit(user.id, 100, 'ADJUSTMENT', user.id)
       return response.created({
         id: user.id,
         fullName: user.fullName,
