@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import Timer from "../components/ui/Timer";
 import Sidebar from "../components/ui/Sidebar";
 import "./StudyPage.css";
@@ -25,6 +25,8 @@ const StudyPage: React.FC<StudyPageProps> = ({
     const [durationMinutes, setDurationMinutes] = useState(25);
     const [status, setStatus] = useState<string | null>(null);
     const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+    const stoppingSessionRef = useRef(false);
+    const activeSessionRef = useRef<number | null>(null);
     const [loadingSubjects, setLoadingSubjects] = useState(false);
     const [creatingSubject, setCreatingSubject] = useState(false);
     const [newSubjectTitle, setNewSubjectTitle] = useState("");
@@ -68,6 +70,7 @@ const StudyPage: React.FC<StudyPageProps> = ({
             };
             const res = await api.startTimer(token, payload);
             setActiveSessionId(res.sessionId);
+            activeSessionRef.current = res.sessionId;
             setStatus("Session started!");
             return true;
         } catch (err: any) {
@@ -76,18 +79,22 @@ const StudyPage: React.FC<StudyPageProps> = ({
         }
     };
     const finalizeSession = async () => {
-        if (!activeSessionId) {
+        if (!activeSessionRef.current) {
             setStatus("No active session to stop.");
             return;
         }
+        if (stoppingSessionRef.current) return;
+        stoppingSessionRef.current = true;
         try {
-            const res = await api.stopTimer(token, activeSessionId);
+            const res = await api.stopTimer(token, activeSessionRef.current, { keepalive: true });
             setStatus(res.message ?? "Session stopped.");
             await onWalletRefresh();
         } catch (err: any) {
             setStatus(err?.message ?? "Unable to stop session");
         } finally {
             setActiveSessionId(null);
+            activeSessionRef.current = null;
+            stoppingSessionRef.current = false;
         }
     };
     const handleStop = async () => {
@@ -96,6 +103,26 @@ const StudyPage: React.FC<StudyPageProps> = ({
     const handleSessionComplete = async () => {
         await finalizeSession();
     };
+
+    useEffect(() => {
+        activeSessionRef.current = activeSessionId;
+    }, [activeSessionId]);
+
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (activeSessionRef.current && !stoppingSessionRef.current) {
+                void finalizeSession();
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            if (activeSessionRef.current && !stoppingSessionRef.current) {
+                void finalizeSession();
+            }
+        };
+    }, []);
     const handleCreateSubject = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newSubjectTitle.trim()) return;

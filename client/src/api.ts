@@ -96,11 +96,12 @@ export const api = {
         })
         return handleResponse<any>(res)
     },
-    async stopTimer(token: string, sessionId: number) {
+    async stopTimer(token: string, sessionId: number, options: { keepalive?: boolean } = {}) {
         const res = await fetch(`${API_BASE}/timer/stop`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', ...authHeaders(token)},
             body: JSON.stringify({sessionId}),
+            keepalive: options.keepalive,
         })
         return handleResponse<any>(res)
     },
