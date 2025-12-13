@@ -1,39 +1,122 @@
 .garden-page {
     padding: 20px;
     color: #1d2a22;
+    min-height: 100vh;
+    background: 
+        /* Grass blade overlay */
+        repeating-linear-gradient(
+            90deg,
+            transparent 0px,
+            transparent 3px,
+            rgba(34, 85, 34, 0.15) 3px,
+            rgba(34, 85, 34, 0.15) 6px
+        ),
+        /* Grass texture variation */
+        repeating-linear-gradient(
+            120deg,
+            transparent 0px,
+            transparent 8px,
+            rgba(50, 120, 50, 0.1) 8px,
+            rgba(50, 120, 50, 0.1) 16px
+        ),
+        /* Base gradient */
+        linear-gradient(
+            180deg,
+            #4a9c4a 0%,
+            #3d8b3d 30%,
+            #358535 60%,
+            #2d7a2d 100%
+        );
+    position: relative;
 }
+
+/* Grass tufts decoration */
+.garden-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(ellipse 8px 12px at 10% 20%, rgba(30, 100, 30, 0.4) 0%, transparent 70%),
+        radial-gradient(ellipse 6px 10px at 25% 60%, rgba(40, 110, 40, 0.3) 0%, transparent 70%),
+        radial-gradient(ellipse 10px 14px at 50% 30%, rgba(35, 105, 35, 0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 7px 11px at 75% 70%, rgba(45, 115, 45, 0.3) 0%, transparent 70%),
+        radial-gradient(ellipse 9px 13px at 90% 40%, rgba(38, 108, 38, 0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 5px 8px at 15% 85%, rgba(42, 112, 42, 0.25) 0%, transparent 70%),
+        radial-gradient(ellipse 8px 12px at 60% 90%, rgba(32, 102, 32, 0.3) 0%, transparent 70%),
+        radial-gradient(ellipse 6px 9px at 85% 15%, rgba(48, 118, 48, 0.25) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Ensure content sits above grass effects */
+.garden-page > * {
+    position: relative;
+    z-index: 1;
+}
+
 .garden-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
 }
+
+.garden-header h2 {
+    color: #fff;
+    text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.3);
+}
+
 .garden-subtitle {
     margin: 4px 0 0;
-    color: #4d5b4f;
+    color: #d4f0d4;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
+
 .seed-selector {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f4f8f2;
+    background: rgba(255, 255, 255, 0.9);
     padding: 8px 12px;
     border-radius: 10px;
-    border: 1px solid #d7e3d0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+
 .seed-selector label {
     font-weight: 600;
+    color: #2d4a2d;
 }
+
 .garden-grid {
     display: grid;
     grid-auto-rows: 110px;
     gap: 10px;
     margin: 20px auto;
 }
+
 .garden-cell {
-    border: 2px solid #3b4a33;
-    border-radius: 10px;
-    background: linear-gradient(145deg, #d7e7d0, #f0f6ec);
+    border: 3px solid #5c4033;
+    border-radius: 8px;
+    background: 
+        /* Dirt texture spots */
+        radial-gradient(circle at 20% 30%, rgba(90, 60, 40, 0.4) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(70, 45, 30, 0.35) 0%, transparent 35%),
+        radial-gradient(circle at 40% 80%, rgba(100, 70, 50, 0.3) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(80, 55, 35, 0.35) 0%, transparent 30%),
+        radial-gradient(circle at 15% 70%, rgba(95, 65, 45, 0.25) 0%, transparent 40%),
+        /* Base dirt gradient */
+        linear-gradient(
+            180deg,
+            #8B6914 0%,
+            #7a5c30 25%,
+            #6b4f28 50%,
+            #5c4322 75%,
+            #4d3820 100%
+        );
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -41,110 +124,342 @@
     cursor: pointer;
     transition: transform 120ms ease, box-shadow 120ms ease, background 200ms ease;
     position: relative;
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.05),
+        0 3px 6px rgba(0, 0, 0, 0.25);
 }
+
 .garden-cell.empty {
-    background: #f5f7f5;
+    background: 
+        /* Dry dirt texture */
+        radial-gradient(circle at 25% 35%, rgba(120, 90, 60, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 65% 55%, rgba(100, 75, 50, 0.25) 0%, transparent 35%),
+        radial-gradient(circle at 45% 75%, rgba(110, 85, 55, 0.2) 0%, transparent 45%),
+        radial-gradient(circle at 80% 20%, rgba(90, 65, 45, 0.3) 0%, transparent 30%),
+        /* Lighter dry dirt base */
+        linear-gradient(
+            180deg,
+            #9a7b4a 0%,
+            #8a6c40 25%,
+            #7b5e38 50%,
+            #6c5030 75%,
+            #5d4428 100%
+        );
 }
+
 .garden-cell.planted {
-    background: linear-gradient(145deg, #b6d6a6, #dcefd3);
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+    background: 
+        /* Rich moist soil texture */
+        radial-gradient(circle at 20% 30%, rgba(60, 40, 25, 0.5) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(50, 35, 20, 0.45) 0%, transparent 35%),
+        radial-gradient(circle at 40% 80%, rgba(70, 50, 30, 0.4) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(55, 38, 22, 0.45) 0%, transparent 30%),
+        radial-gradient(circle at 15% 70%, rgba(65, 45, 28, 0.35) 0%, transparent 40%),
+        /* Dark rich soil base */
+        linear-gradient(
+            180deg,
+            #5a4020 0%,
+            #4d3518 25%,
+            #402a12 50%,
+            #35220e 75%,
+            #2a1a0a 100%
+        );
+    box-shadow: 
+        inset 0 3px 6px rgba(0, 0, 0, 0.4),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.03),
+        0 3px 6px rgba(0, 0, 0, 0.3);
 }
+
 .garden-cell.hover {
-    box-shadow: 0 0 0 3px #8bd980;
+    box-shadow: 
+        0 0 0 3px #8bd980,
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 3px 6px rgba(0, 0, 0, 0.25);
 }
+
 .garden-cell:hover {
     transform: translateY(-2px);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 5px 10px rgba(0, 0, 0, 0.35);
 }
+
 .cell-coord {
     position: absolute;
     top: 6px;
     left: 8px;
     font-size: 0.75rem;
-    color: #4d5b4f;
+    color: rgba(255, 255, 255, 0.6);
     font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
+
 .cell-empty {
-    color: #6b7a6b;
+    color: #c9b896;
     font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
+
+.cell-plant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
 .cell-plant-name {
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
 }
+
 .cell-plant-stage {
-    color: #2b382c;
-    font-size: 0.8rem;
-    margin-top: 4px;
+    color: #d4c9a8;
+    font-size: 0.75rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
+
+/* Plant image in garden cells */
+.plant-image {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    transition: transform 200ms ease;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.15));
+}
+
+.garden-cell:hover .plant-image {
+    transform: scale(1.15);
+}
+
+/* Seed image in inventory cards */
+.seed-image {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Pack image in inventory cards */
+.pack-image {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Shop item image */
+.shop-item-image {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Card title with image layout */
+.card-title-with-image {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .garden-panels {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px;
+    margin-top: 10px;
 }
+
 .panel {
-    border: 1px solid #dbe6d6;
+    border: 3px solid #5c4033;
     border-radius: 12px;
     padding: 12px;
-    background: #fdfefc;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: 
+        /* Dirt texture spots */
+        radial-gradient(circle at 15% 25%, rgba(90, 60, 40, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 75% 50%, rgba(70, 45, 30, 0.25) 0%, transparent 35%),
+        radial-gradient(circle at 35% 75%, rgba(100, 70, 50, 0.2) 0%, transparent 45%),
+        radial-gradient(circle at 90% 20%, rgba(80, 55, 35, 0.25) 0%, transparent 30%),
+        /* Base dirt gradient */
+        linear-gradient(
+            180deg,
+            #8B6914 0%,
+            #7a5c30 25%,
+            #6b4f28 50%,
+            #5c4322 75%,
+            #4d3820 100%
+        );
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.05),
+        0 4px 12px rgba(0, 0, 0, 0.25);
 }
+
 .panel header {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
+
+.panel h3 {
+    color: #fff;
+    text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.4);
+    margin: 0;
+}
+
 .panel-subtitle {
     margin: 2px 0 0;
-    color: #5f6c5f;
+    color: #d4c9a8;
     font-size: 0.9rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
+
 .status {
     margin: 8px 0;
     padding: 10px 12px;
     border-radius: 10px;
     font-weight: 600;
 }
+
 .status-busy {
     background: #fff2d6;
     border: 1px solid #f3d99f;
     color: #7c5a12;
 }
+
 .status-message {
     background: #e7f5e4;
     border: 1px solid #cbe4c8;
     color: #1c4226;
 }
+
 .muted {
-    color: #617161;
+    color: #c9b896;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
+
 .card-grid {
     display: grid;
     gap: 10px;
+    margin-top: 10px;
 }
+
 .card {
-    background: #f6faf5;
-    border: 1px solid #d8e6d7;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #8B7355;
     border-radius: 12px;
     padding: 10px 12px;
     transition: transform 120ms ease, box-shadow 120ms ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
+
 .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
+
+.card.seed-card {
+    border-left: 4px solid #7cb342;
+}
+
 .card.seed-card.dragging {
     opacity: 0.7;
     border-style: dashed;
 }
+
+/* Pack card rarity colors */
+.card.pack-card {
+    border-left: 4px solid #9e9e9e;
+}
+
+.card.pack-card[data-rarity="common"] {
+    border-left: 4px solid #9e9e9e;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(224, 224, 224, 0.95) 100%);
+}
+
+.card.pack-card[data-rarity="uncommon"] {
+    border-left: 4px solid #4caf50;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 230, 201, 0.95) 100%);
+}
+
+.card.pack-card[data-rarity="rare"] {
+    border-left: 4px solid #2196f3;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(187, 222, 251, 0.95) 100%);
+}
+
+.card.pack-card[data-rarity="epic"] {
+    border-left: 4px solid #9c27b0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(225, 190, 231, 0.95) 100%);
+}
+
+.card.pack-card[data-rarity="legendary"] {
+    border-left: 4px solid #ff9800;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 236, 179, 0.95) 100%);
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.card.pack-card[data-rarity="mythic"] {
+    border-left: 4px solid #e91e63;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 187, 208, 0.95) 100%);
+    box-shadow: 0 2px 8px rgba(233, 30, 99, 0.3);
+}
+
+/* Rarity pills for packs */
+.pill.rarity-common {
+    background: #e0e0e0;
+    border-color: #bdbdbd;
+    color: #424242;
+}
+
+.pill.rarity-uncommon {
+    background: #c8e6c9;
+    border-color: #a5d6a7;
+    color: #2e7d32;
+}
+
+.pill.rarity-rare {
+    background: #bbdefb;
+    border-color: #90caf9;
+    color: #1565c0;
+}
+
+.pill.rarity-epic {
+    background: #e1bee7;
+    border-color: #ce93d8;
+    color: #7b1fa2;
+}
+
+.pill.rarity-legendary {
+    background: #ffe0b2;
+    border-color: #ffcc80;
+    color: #e65100;
+}
+
+.pill.rarity-mythic {
+    background: #f8bbd9;
+    border-color: #f48fb1;
+    color: #c2185b;
+}
+
 .card-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 8px;
 }
+
+.card-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .card-title {
     font-weight: 700;
 }
+
 .card-body {
     margin-top: 6px;
     color: #4a554a;
@@ -153,6 +468,7 @@
     align-items: center;
     gap: 12px;
 }
+
 .pill {
     background: #e7f2e3;
     color: #2c3c2f;
@@ -161,11 +477,13 @@
     font-size: 0.8rem;
     border: 1px solid #cfe2c8;
 }
+
 .pill.price {
     background: #f0f5ff;
     border-color: #cfdcf9;
     color: #2a3a73;
 }
+
 .ghost-button {
     background: transparent;
     border: 1px dashed #8aa185;
@@ -174,9 +492,11 @@
     border-radius: 10px;
     cursor: pointer;
 }
+
 .ghost-button:hover {
     background: #e7f2e3;
 }
+
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -186,6 +506,7 @@
     justify-content: center;
     z-index: 50;
 }
+
 .modal {
     background: #ffffff;
     padding: 18px;
@@ -193,35 +514,41 @@
     width: min(440px, 90vw);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
+
 .modal-row {
     display: flex;
     align-items: center;
     gap: 10px;
     margin: 12px 0;
 }
+
 .modal-row input {
     flex: 1;
     padding: 6px 8px;
     border-radius: 8px;
     border: 1px solid #d6e1d2;
 }
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     margin-top: 12px;
 }
+
 .modal button {
     border-radius: 10px;
     border: 1px solid #ccd8cc;
     padding: 8px 12px;
     cursor: pointer;
 }
+
 .modal button.primary {
     background: #3d7f3d;
     border-color: #2f682f;
     color: #ffffff;
 }
+
 .reward-list {
     background: #f6faf5;
     border: 1px solid #d8e6d7;
@@ -229,6 +556,7 @@
     padding: 10px;
     margin-top: 8px;
 }
+
 .pack-opening {
     position: fixed;
     bottom: 20px;
@@ -244,6 +572,7 @@
     z-index: 40;
     overflow: hidden;
 }
+
 .sparkle {
     width: 10px;
     height: 10px;
@@ -251,9 +580,11 @@
     border-radius: 50%;
     animation: pop 0.7s ease infinite;
 }
+
 .sparkle.delay {
     animation-delay: 0.25s;
 }
+
 @keyframes pop {
     0% { transform: scale(0.6) translateY(0); opacity: 0.8; }
     50% { transform: scale(1.3) translateY(-4px); opacity: 1; }
@@ -263,8 +594,8 @@
 .shop-tabs {
     display: inline-flex;
     gap: 6px;
-    background: #eef5ea;
-    border: 1px solid #d3e2d0;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 4px;
     border-radius: 12px;
 }
@@ -276,11 +607,16 @@
     border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
-    color: #3b4a33;
+    color: #d4c9a8;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.shop-tabs .tab:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .shop-tabs .tab.active {
-    background: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    color: #1d2a22;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    color: #4d3820;
 }
