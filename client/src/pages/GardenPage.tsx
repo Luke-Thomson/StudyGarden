@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../api";
 import "./GardenPage.css";
+
 type GardenCell = {
     plotId: number;
     plantId: number;
@@ -9,14 +10,17 @@ type GardenCell = {
     stage: number;
     plantedAt?: string | null;
 } | null;
+
 type GardenResponse = {
     grid: GardenCell[][];
 };
+
 type InventorySeed = {
     slug: string;
     name: string;
     quantity: number;
 };
+
 type InventoryItem = {
     item: {
         slug: string;
@@ -24,20 +28,43 @@ type InventoryItem = {
         type?: string;
         description?: string | null;
         price?: number;
+        rarity?: string;
     };
     quantity: number;
 };
+
 type ShopItem = {
     slug: string;
     name: string;
     description?: string | null;
     price?: number;
     type?: string;
+    rarity?: string;
 };
+
 interface GardenPageProps {
     token: string;
     onWalletRefresh: () => Promise<void>;
 }
+
+// Helper function to get the plant image path based on slug and stage
+const getPlantImagePath = (slug: string, stage: number): string => {
+    return new URL(`../assets/plants/${slug}_stage_${stage}.png`, import.meta.url).href;
+};
+
+// Helper function to get seed image path
+const getSeedImagePath = (slug: string): string => {
+    return new URL(`../assets/seeds/${slug}.png`, import.meta.url).href;
+};
+
+// Helper function to get pack image path
+const getPackImagePath = (slug: string): string => {
+    return new URL(`../assets/packs/${slug}.png`, import.meta.url).href;
+};
+
+// Fallback image if plant image doesn't exist
+const FALLBACK_PLANT_IMAGE = new URL("../assets/plants/default-plant.png", import.meta.url).href;
+
 const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
     const [data, setData] = useState<GardenResponse | null>(null);
     const [loading, setLoading] = useState(false);
@@ -56,11 +83,14 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
     const [confirmingItem, setConfirmingItem] = useState<ShopItem | null>(null);
     const [packRewardsModal, setPackRewardsModal] = useState<string[] | null>(null);
     const [openingAnimation, setOpeningAnimation] = useState(false);
+    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
     const seeds: InventorySeed[] = useMemo(() => {
         return (inventory || [])
             .filter((i) => i?.item?.type === "seed")
             .map((i) => ({ slug: i.item.slug, name: i.item.name, quantity: i.quantity }));
     }, [inventory]);
+
     const packs = useMemo(
         () => inventory.filter((i) => i?.item?.type === "seed_pack"),
         [inventory]
@@ -70,6 +100,19 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
         if (shopFilter === "all") return shopItems;
         return shopItems.filter((item) => item.type === shopFilter);
     }, [shopFilter, shopItems]);
+
+    const handleImageError = (slug: string, stage: number) => {
+        const imageKey = `${slug}-stage${stage}`;
+        setFailedImages((prev) => new Set(prev).add(imageKey));
+    };
+
+    const getImageSrc = (slug: string, stage: number): string => {
+        const imageKey = `${slug}-stage${stage}`;
+        if (failedImages.has(imageKey)) {
+            return FALLBACK_PLANT_IMAGE;
+        }
+        return getPlantImagePath(slug, stage);
+    };
 
     const loadGarden = async () => {
         setLoading(true);
@@ -83,6 +126,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setLoading(false);
         }
     };
+
     const loadInventory = async () => {
         try {
             const holdings = await api.inventory(token);
@@ -91,6 +135,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setMessage(err?.message ?? "Unable to load inventory");
         }
     };
+
     const loadShop = async () => {
         try {
             const items = await api.items(token);
@@ -99,11 +144,13 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setMessage(err?.message ?? "Unable to load shop");
         }
     };
+
     useEffect(() => {
         loadGarden();
         loadInventory();
         loadShop();
     }, [token]);
+
     const plantSeed = async (row: number, col: number, seedSlug?: string) => {
         const slugToUse = seedSlug || selectedSeed;
         if (!slugToUse) {
@@ -123,6 +170,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setBusy(false);
         }
     };
+
     const harvestPlant = async (row: number, col: number) => {
         setBusy(true);
         setMessage(null);
@@ -137,6 +185,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setBusy(false);
         }
     };
+
     const purchaseItem = async () => {
         if (!purchaseSlug) {
             setMessage("Choose an item to buy.");
@@ -158,6 +207,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setBusy(false);
         }
     };
+
     const openPack = async () => {
         if (!openPackSlug) {
             setMessage("No pack selected to open.");
@@ -210,28 +260,33 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
             setTimeout(() => setOpeningAnimation(false), 600);
         }
     };
+
     const handleDrop = (row: number, col: number) => {
         if (busy) return;
         plantSeed(row, col, draggingSeed || selectedSeed);
         setDraggingSeed(null);
     };
+
     const handlePurchaseConfirm = (item: ShopItem) => {
         setPurchaseSlug(item.slug);
         setPurchaseQty(1);
         setConfirmingItem(item);
     };
+
     const confirmPurchaseAndBuy = async () => {
         const success = await purchaseItem();
         if (success) {
             setConfirmingItem(null);
         }
     };
+
     const handlePackDoubleClick = async (slug: string) => {
         if (busy) return;
         setOpenPackSlug(slug);
         setPackRewardsModal(null);
         await openPack();
     };
+
     useEffect(() => {
         if (seeds.length > 0 && !selectedSeed) {
             setSelectedSeed(seeds[0].slug);
@@ -254,8 +309,10 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
     if (!data || !data.grid || data.grid.length === 0) {
         return <div>No garden data</div>;
     }
+
     const size = data.grid.length;
     const flat = data.grid.flat();
+
     return (
         <div className="garden-page">
             <div className="garden-header">
@@ -283,8 +340,10 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                     </select>
                 </div>
             </div>
+
             {busy && <div className="status status-busy">Processing…</div>}
             {message && <div className="status status-message">{message}</div>}
+
             <div
                 className="garden-grid"
                 style={{ gridTemplateColumns: `repeat(${size}, minmax(80px, 1fr))` }}
@@ -317,6 +376,12 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                                 <div className="cell-empty">{draggingSeed ? "Drop seed" : "Empty"}</div>
                             ) : (
                                 <div className="cell-plant">
+                                    <img
+                                        src={getImageSrc(cell!.item.slug, cell!.stage)}
+                                        alt={`${cell!.item.name} stage ${cell!.stage}`}
+                                        className="plant-image"
+                                        onError={() => handleImageError(cell!.item.slug, cell!.stage)}
+                                    />
                                     <div className="cell-plant-name">{cell!.item.name}</div>
                                     <div className="cell-plant-stage">Stage {cell!.stage}</div>
                                 </div>
@@ -325,6 +390,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                     );
                 })}
             </div>
+
             <div className="garden-panels">
                 <section className="panel inventory-panel">
                     <header>
@@ -349,7 +415,17 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                                     onDragEnd={() => setDraggingSeed(null)}
                                 >
                                     <div className="card-top">
-                                        <span className="card-title">{seed.name}</span>
+                                        <div className="card-title-with-image">
+                                            <img
+                                                src={getSeedImagePath(seed.slug)}
+                                                alt={seed.name}
+                                                className="seed-image"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = "none";
+                                                }}
+                                            />
+                                            <span className="card-title">{seed.name}</span>
+                                        </div>
                                         <span className="pill">x{seed.quantity}</span>
                                     </div>
                                     <div className="card-body">
@@ -360,6 +436,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                         </div>
                     )}
                 </section>
+
                 <section className="panel inventory-panel">
                     <header>
                         <div>
@@ -375,11 +452,29 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                                 <div
                                     key={pack.item.slug}
                                     className={`card pack-card ${openingAnimation && openPackSlug === pack.item.slug ? "opening" : ""}`}
+                                    data-rarity={pack.item.rarity || "common"}
                                     onDoubleClick={() => handlePackDoubleClick(pack.item.slug)}
                                 >
                                     <div className="card-top">
-                                        <span className="card-title">{pack.item.name}</span>
-                                        <span className="pill">x{pack.quantity}</span>
+                                        <div className="card-title-with-image">
+                                            <img
+                                                src={getPackImagePath(pack.item.slug)}
+                                                alt={pack.item.name}
+                                                className="pack-image"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = "none";
+                                                }}
+                                            />
+                                            <span className="card-title">{pack.item.name}</span>
+                                        </div>
+                                        <div className="card-pills">
+                                            {pack.item.rarity && (
+                                                <span className={`pill rarity-${pack.item.rarity}`}>
+                                                    {pack.item.rarity}
+                                                </span>
+                                            )}
+                                            <span className="pill">x{pack.quantity}</span>
+                                        </div>
                                     </div>
                                     <div className="card-body">
                                         <p>Double-click to open for a surprise.</p>
@@ -392,6 +487,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                         </div>
                     )}
                 </section>
+
                 <section className="panel shop-panel">
                     <header>
                         <div>
@@ -435,12 +531,30 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                             {filteredShopItems.map((item) => (
                                 <div
                                     key={item.slug}
-                                    className="card shop-card"
+                                    className={`card shop-card ${item.type === "seed_pack" ? "pack-card" : "seed-card"}`}
+                                    data-rarity={item.type === "seed_pack" ? (item.rarity || "common") : undefined}
                                     onDoubleClick={() => handlePurchaseConfirm(item)}
                                 >
                                     <div className="card-top">
-                                        <span className="card-title">{item.name}</span>
-                                        <span className="pill price">{item.price ?? 0} coins</span>
+                                        <div className="card-title-with-image">
+                                            <img
+                                                src={item.type === "seed_pack" ? getPackImagePath(item.slug) : getSeedImagePath(item.slug)}
+                                                alt={item.name}
+                                                className="shop-item-image"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = "none";
+                                                }}
+                                            />
+                                            <span className="card-title">{item.name}</span>
+                                        </div>
+                                        <div className="card-pills">
+                                            {item.type === "seed_pack" && item.rarity && (
+                                                <span className={`pill rarity-${item.rarity}`}>
+                                                    {item.rarity}
+                                                </span>
+                                            )}
+                                            <span className="pill price">{item.price ?? 0} coins</span>
+                                        </div>
                                     </div>
                                     <div className="card-body">
                                         <p>{item.description || "Stocked for adventurous gardeners."}</p>
@@ -458,6 +572,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                     )}
                 </section>
             </div>
+
             {confirmingItem && (
                 <div className="modal-backdrop" role="dialog" aria-modal="true">
                     <div className="modal">
@@ -484,6 +599,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                     </div>
                 </div>
             )}
+
             {packRewardsModal && (
                 <div className="modal-backdrop" role="dialog" aria-modal="true">
                     <div className="modal">
@@ -504,6 +620,7 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
                     </div>
                 </div>
             )}
+
             {openingAnimation && (
                 <div className="pack-opening">
                     <div className="sparkle" />
@@ -515,4 +632,5 @@ const GardenPage: React.FC<GardenPageProps> = ({ token, onWalletRefresh }) => {
         </div>
     );
 };
+
 export default GardenPage;
