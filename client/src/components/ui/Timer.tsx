@@ -210,7 +210,11 @@ const Timer: React.FC<TimerProps> = ({
                     </button>
                 </div>
             </div>
-
+        
+        <div className="timer-subtitle">
+            If you click off of the Study page, your progress <br />
+             will not be lost but the timer will reset!
+        </div>
             <div className="timer-displays">
                 {showDigital && (
                     <div
